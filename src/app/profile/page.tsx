@@ -1,16 +1,13 @@
-import Feature from '@/components/home/feature';
-import Hero from '@/components/home/hero';
+import Profile from '@/components/profile';
 import EndCTA from '@/components/shared/end-cta';
 import Footer from '@/components/shared/footer';
 import Header from '@/components/shared/header';
 
-export default function LandingPage() {
+export default function Page() {
   return (
     <>
       <Header />
-
-      <Hero />
-      <Feature />
+      <Profile />
       <EndCTA />
       <Footer />
     </>

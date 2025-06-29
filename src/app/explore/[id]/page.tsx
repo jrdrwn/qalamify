@@ -1,16 +1,19 @@
-import Feature from '@/components/home/feature';
-import Hero from '@/components/home/hero';
+import DetailNFT from '@/components/explore/detail-nft';
 import EndCTA from '@/components/shared/end-cta';
 import Footer from '@/components/shared/footer';
 import Header from '@/components/shared/header';
 
-export default function LandingPage() {
+interface Props {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+export default async function Page({ params }: Props) {
   return (
     <>
       <Header />
-
-      <Hero />
-      <Feature />
+      <DetailNFT id={parseInt((await params).id)} />
       <EndCTA />
       <Footer />
     </>
