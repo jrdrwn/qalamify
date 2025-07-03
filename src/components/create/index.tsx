@@ -1,8 +1,15 @@
 'use client';
 
+import KaligrafiNFT from '@/app/abis/KaligrafiNFT.json';
 import ConfirmDialog from '@/components/shared/confrm-dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -13,23 +20,28 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useAppKitAccount } from '@reown/appkit/react';
 import { Image as ImageIcon, Palette, Sparkles, Upload } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useWriteContract } from 'wagmi';
+
+import { Badge } from '../ui/badge';
 
 const Create = () => {
+  const { address } = useAppKitAccount();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     category: '',
-    price: '',
     file: null as File | null,
   });
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const { writeContractAsync } = useWriteContract();
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 50 * 1024 * 1024) {
@@ -52,7 +64,6 @@ const Create = () => {
       !formData.name ||
       !formData.description ||
       !formData.category ||
-      !formData.price ||
       !formData.file
     ) {
       toast.error('Please fill in all required fields');
@@ -63,12 +74,58 @@ const Create = () => {
   };
 
   const handleConfirmMint = async () => {
+    if (!address) {
+      toast.warning('Please connect to a wallet');
+      return;
+    }
     setIsLoading(true);
     setShowConfirm(false);
 
     try {
-      // Simulate minting process
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      const signedUrlResponse = await fetch('/api/pre-signed-url');
+      if (!signedUrlResponse.ok) {
+        toast.error('Failed to get pre-signed URL');
+        return;
+      }
+
+      const { url } = await signedUrlResponse.json();
+      const file = formData.file;
+
+      const pinataBody = new FormData();
+      pinataBody.append('file', file!);
+      pinataBody.append('network', 'public');
+      pinataBody.append(
+        'keyvalues',
+        JSON.stringify({
+          name: formData.name,
+          description: formData.description,
+          category: formData.category,
+        }),
+      );
+      const pinataUploadResponse = await fetch(url, {
+        method: 'POST',
+        body: pinataBody,
+      });
+
+      if (!pinataUploadResponse.ok) {
+        toast.error('Pinata upload failed');
+        return;
+      }
+
+      const pinataUploadResponseData = await pinataUploadResponse.json();
+
+      const mintTokenData = await writeContractAsync({
+        address: process.env.NEXT_PUBLIC_NFT_ADDRESS! as `0x${string}`,
+        abi: KaligrafiNFT.abi,
+        functionName: 'mintToken',
+        args: [pinataUploadResponseData.data.cid],
+        account: address as `0x${string}`,
+      });
+
+      if (!mintTokenData) {
+        toast.error('Failed to mint NFT');
+        return;
+      }
 
       toast.success('NFT minted successfully!', {
         description:
@@ -80,7 +137,6 @@ const Create = () => {
         name: '',
         description: '',
         category: '',
-        price: '',
         file: null,
       });
     } catch (error) {
@@ -99,14 +155,14 @@ const Create = () => {
         <div className="mx-auto max-w-4xl">
           {/* Header */}
           <div className="mb-12 text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-sm font-medium text-green-800">
+            <Badge className="mb-4 rounded-full px-4 py-2">
               <Sparkles className="h-4 w-4" />
               Bismillahirrahmanirrahim
-            </div>
-            <h1 className="mb-4 text-4xl font-bold text-gray-900 md:text-5xl">
-              Mint Your <span className="text-green-600">Qalam</span>
+            </Badge>
+            <h1 className="mb-4 text-4xl font-bold md:text-5xl">
+              Mint Your <span className="text-primary">Qalam</span>
             </h1>
-            <p className="mx-auto max-w-2xl text-xl text-gray-600">
+            <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
               Transform your exquisite calligraphy into a unique NFT and share
               its beauty with the world.
             </p>
@@ -118,12 +174,12 @@ const Create = () => {
             <Card className="">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <ImageIcon className="h-5 w-5 text-purple-600" />
+                  <ImageIcon className="h-5 w-5" />
                   Upload Artwork
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex h-full flex-col items-stretch justify-between">
-                <div className="rounded-lg border-2 border-dashed border-gray-300 p-4 text-center transition-colors hover:border-purple-400">
+                <div className="rounded-lg border-2 border-dashed border-border p-4 text-center transition-colors hover:border-primary">
                   <input
                     type="file"
                     id="file-upload"
@@ -135,8 +191,8 @@ const Create = () => {
                     <div className="flex flex-col items-center">
                       {formData.file ? (
                         <div className="w-full">
-                          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-                            <Upload className="h-8 w-8 text-green-600" />
+                          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+                            <Upload className="h-8 w-8 text-muted-foreground" />
                           </div>
                           <p className="mb-2 text-sm font-medium text-gray-900">
                             {formData.file.name}
@@ -147,10 +203,10 @@ const Create = () => {
                         </div>
                       ) : (
                         <>
-                          <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-purple-100">
-                            <Upload className="h-8 w-8 text-purple-600" />
+                          <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+                            <Upload className="h-8 w-8 text-muted-foreground" />
                           </div>
-                          <p className="mb-2 text-lg font-medium text-gray-900">
+                          <p className="mb-2 text-lg font-medium">
                             Drop your file here, or browse
                           </p>
                           <p className="text-sm text-gray-500">
@@ -173,9 +229,11 @@ const Create = () => {
                     />
                   </div>
                 ) : (
-                  <div className="mt-4 flex h-48 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 p-4 text-gray-500">
-                    <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <p className="text-center">Your artwork will appear here</p>
+                  <div className="mt-4 flex h-48 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-4">
+                    <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <p className="text-center text-muted-foreground">
+                      Your artwork will appear here
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -185,12 +243,15 @@ const Create = () => {
             <Card className="">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Palette className="h-5 w-5 text-purple-600" />
+                  <Palette className="h-5 w-5" />
                   NFT Details
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <form onSubmit={handleSubmit} className="space-y-6">
+              <form
+                onSubmit={handleSubmit}
+                className="flex h-full flex-col justify-between space-y-6"
+              >
+                <CardContent className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="name">Name *</Label>
                     <Input
@@ -243,7 +304,7 @@ const Create = () => {
                       </SelectContent>
                     </Select>
                   </div>
-
+                  {/*
                   <div className="space-y-2">
                     <Label htmlFor="price">Price (ETH) *</Label>
                     <Input
@@ -258,8 +319,9 @@ const Create = () => {
                       }
                       required
                     />
-                  </div>
-
+                  </div> */}
+                </CardContent>
+                <CardFooter className="flex-col gap-2">
                   <Button
                     type="submit"
                     className="w-full"
@@ -278,8 +340,24 @@ const Create = () => {
                       </>
                     )}
                   </Button>
-                </form>
-              </CardContent>
+                  <p className="text-center">
+                    <span className="text-sm text-muted-foreground">
+                      By clicking &quot;Create NFT&quot;, you agree to our{' '}
+                      <a href="/terms" className="text-primary hover:underline">
+                        Terms of Service
+                      </a>{' '}
+                      and{' '}
+                      <a
+                        href="/privacy"
+                        className="text-primary hover:underline"
+                      >
+                        Privacy Policy
+                      </a>
+                      .
+                    </span>
+                  </p>
+                </CardFooter>
+              </form>
             </Card>
           </div>
         </div>
@@ -289,7 +367,7 @@ const Create = () => {
         open={showConfirm}
         onOpenChange={setShowConfirm}
         title="Confirm NFT Creation"
-        description={`Are you sure you want to mint "${formData.name}" for ${formData.price} ETH? This action cannot be undone.`}
+        description={`Are you sure you want to mint "${formData.name}"? This action cannot be undone.`}
         onConfirm={handleConfirmMint}
         confirmText="Mint NFT"
         cancelText="Cancel"

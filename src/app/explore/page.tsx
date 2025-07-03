@@ -1,17 +1,12 @@
 import { Hero } from '@/components/explore/hero';
 import ListNFT from '@/components/explore/list-nft';
-import EndCTA from '@/components/shared/end-cta';
-import Footer from '@/components/shared/footer';
-import Header from '@/components/shared/header';
+import { Suspense } from 'react';
 
 export default function Page() {
   return (
-    <>
-      <Header />
+    <Suspense>
       <Hero />
       <ListNFT />
-      <EndCTA />
-      <Footer />
-    </>
+    </Suspense>
   );
 }

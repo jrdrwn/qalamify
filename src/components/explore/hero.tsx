@@ -5,7 +5,9 @@ import { Filter, PencilRuler, PenTool, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
+import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 
@@ -47,12 +49,23 @@ export function Hero() {
   }, []);
 
   return (
-    <section className="relative container mx-auto flex justify-center px-2 pt-8 pb-6 lg:px-0 lg:pt-16 lg:pb-12">
+    <section className="relative container mx-auto flex justify-center px-2 pt-8 pb-6 lg:px-0 lg:pt-8 lg:pb-12">
       <div>
         <SidesDecorator />
-        <h1 className="from-primary-900 mb-8 bg-gradient-to-b to-neutral-500 bg-clip-text text-center text-3xl leading-tight font-bold tracking-wide text-transparent sm:max-w-lg sm:text-4xl md:max-w-2xl md:text-5xl lg:mt-6 lg:max-w-3xl lg:text-6xl xl:mt-4 xl:max-w-4xl xl:text-7xl">
-          Temukan Kaligrafi NFT yang Unik dan Berharga!
-        </h1>
+        {/* Header */}
+        <div className="mb-12 text-center">
+          <Badge className="mb-4 rounded-full px-4 py-2">
+            <Search className="h-4 w-4" />
+            Explore
+          </Badge>
+          <h1 className="mb-4 text-4xl font-bold md:text-5xl">
+            Discover <span className="text-primary">NFT Calligraphy</span>
+          </h1>
+          <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
+            Explore a collection of unique and valuable calligraphy NFTs,
+            showcasing the beauty of artistic expression.
+          </p>
+        </div>
         <div className="mx-auto mt-12 flex items-center justify-center gap-2 lg:gap-4">
           <Input
             type="search"
@@ -77,7 +90,8 @@ export function Hero() {
             className="lg:px-4 lg:py-6"
             variant={'secondary'}
             onClick={() => {
-              setFilterOpen(!filterOpen);
+              // setFilterOpen(!filterOpen);
+              toast.info('Fitur ini akan segera hadir!');
             }}
           >
             <Filter />

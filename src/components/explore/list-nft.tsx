@@ -1,19 +1,38 @@
 'use client';
 
+import MarketplaceNFT from '@/app/abis/Marketplace.json';
+import { useAppKitAccount } from '@reown/appkit/react';
 import { useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { toast } from 'sonner';
+import { useReadContract } from 'wagmi';
 
 import { Button } from '../ui/button';
 import CardNFT, { CardNFTSkeleton, INFT } from './card-nft';
 
 export default function ListNFT() {
   const searchParams = useSearchParams();
-  const [nfts, setNFTs] = useState<INFT[]>([]);
+  const { address } = useAppKitAccount();
   const [newLoading, setNewLoading] = useState(false);
-  const { data, error, loading } = {
-    data: undefined,
-    error: null,
-    loading: true,
+  const {
+    data: availableMarketItems,
+    isLoading: isLoadingAvailableMarketItems,
+    isError: isErrorAvailableMarketItems,
+  } = useReadContract({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as `0x${string}`,
+    abi: MarketplaceNFT.abi,
+    functionName: 'fetchAvailableMarketItems',
+    // args: [
+    // address, // Owner address
+    // searchParams.get('skip') ? parseInt(searchParams.get('skip') as string) : 0, // Skip parameter
+    // 6, // Limit to 6 NFTs per request
+    // ],
+    // watch: true,
+    // account: process.env.NEXT_PUBLIC_MARKET_ADDRESS as `0x${string}`,
+  }) as {
+    data: INFT[];
+    isLoading: boolean;
+    isError: boolean;
   };
 
   const createQueryString = useCallback(
@@ -26,56 +45,53 @@ export default function ListNFT() {
     [searchParams],
   );
 
-  useEffect(() => {
-    if (data) {
-      setNFTs(data);
-    }
-  }, [data]);
-
   return (
     <section className="container mx-auto px-2 py-16 lg:px-0">
-      <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-16">
-        <CardNFT
-          creator="Pencipta NFT"
-          jenis="Jenis NFT"
-          nama="A Kaligrafi testing dolor sit amet"
-          image_url="https://images.unsplash.com/photo-1664022617645-cf71791942e4"
-          price={2}
-          created_at="2023-10-01T12:00:00Z"
-          id={1}
-          creator_address="0x1234567890abcdef1234567890abcdef12345678"
-        />
-        {loading &&
+      <div className="grid grid-cols-1 gap-x-8 gap-y-16 px-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {isLoadingAvailableMarketItems &&
           Array(6)
             .fill(0)
             .map((_, index) => <CardNFTSkeleton key={index} />)}
-        {!loading &&
-          nfts &&
-          nfts.map((nft) => <CardNFT key={nft.id} {...nft} />)}
-        {!loading && !newLoading && nfts.length === 0 && (
-          <p className="w-full text-center text-lg font-semibold text-muted-foreground">
-            Tidak ada NFT ditemukan
-          </p>
-        )}
+        {!isLoadingAvailableMarketItems &&
+          availableMarketItems &&
+          availableMarketItems.map((nft) => (
+            <CardNFT
+              key={nft.marketItemId}
+              currentAccount={
+                address || process.env.NEXT_PUBLIC_MARKET_ADDRESS!
+              }
+              nft={nft}
+            />
+          ))}
+
+        {!isLoadingAvailableMarketItems &&
+          availableMarketItems.length === 0 && (
+            <p className="w-full text-center text-lg font-semibold text-muted-foreground">
+              Tidak ada NFT ditemukan
+            </p>
+          )}
         {newLoading &&
           Array(3)
             .fill(0)
             .map((_, index) => <CardNFTSkeleton key={index} />)}
 
-        {error && <p>Error: {error.message}</p>}
+        {isErrorAvailableMarketItems && (
+          <p>There was an error loading the NFTs. Please try again later.</p>
+        )}
       </div>
       <div className="flex justify-center">
-        {!newLoading && !loading && (
+        {!newLoading && !isLoadingAvailableMarketItems && (
           <Button
             variant="outline"
             onClick={async () => {
-              setNewLoading(true);
-              const res = await fetch(
-                `/api/nft?${createQueryString('skip', nfts.length.toString())}`,
-              );
-              const data = await res.json();
-              setNewLoading(false);
-              setNFTs((prev) => [...prev, ...data]);
+              // setNewLoading(true);
+              // const res = await fetch(
+              //   `/api/nft?${createQueryString('skip', nfts.length.toString())}`,
+              // );
+              // const data = await res.json();
+              // setNewLoading(false);
+              // setNFTs((prev) => [...prev, ...data]);
+              toast.info('Fitur ini akan segera hadir!');
             }}
             className="mx-auto mt-8"
           >

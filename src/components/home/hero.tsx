@@ -46,19 +46,19 @@ export default function Hero() {
             <BellDot className="size-5 text-primary xl:size-6" />
           </span>
           <p className="text-sm xl:text-base">
-            Koleksi Kaligrafi Baru Telah Hadir!
+            A New Collection of Calligraphy Awaits!
           </p>
           <span className="rounded-full bg-neutral-500 p-1">
             <ArrowRight className="size-4 text-neutral-50 md:size-5 xl:size-6" />
           </span>
         </div>
-        <h1 className="mt-4 mb-4 max-w-3xl bg-gradient-to-br from-orange-900 to-neutral-500 bg-clip-text text-4xl leading-tight font-bold text-transparent md:text-5xl lg:mb-6 lg:text-4xl xl:mb-8 xl:text-6xl xl:tracking-wide 2xl:text-7xl">
-          Temukan dan Miliki NFT Kaligrafi Eksklusif!
+        <h1 className="mt-4 mb-4 max-w-3xl bg-gradient-to-br from-primary to-secondary bg-clip-text text-4xl leading-tight font-bold text-transparent md:text-5xl lg:mb-6 lg:text-4xl xl:mb-8 xl:text-6xl xl:tracking-wide">
+          Discover and Own Exclusive Islamic Calligraphy NFTs!
         </h1>
         <p className="mx-auto max-w-2xl leading-relaxed lg:mx-0 xl:text-lg xl:tracking-wide">
-          Jelajahi koleksi seni kaligrafi digital yang unik dan autentik. Mulai
-          dari karya klasik hingga modern, semuanya tersedia untuk Anda miliki
-          sebagai NFT.
+          Explore a unique and authentic collection of digital Islamic
+          calligraphy art. From timeless classics to modern masterpieces, all
+          available for you to cherish as NFTs.
         </p>
         <div className="mt-8 flex items-center justify-center gap-4 lg:justify-start 2xl:mt-12">
           <Input
@@ -72,7 +72,7 @@ export default function Hero() {
             <Link
               scroll={false}
               href={{
-                pathname: '/cari-kaligrafi',
+                pathname: '/explore',
                 query: { q },
               }}
             >
@@ -120,28 +120,28 @@ export default function Hero() {
       <div className="w-full pt-20 sm:mx-auto sm:max-w-lg lg:mx-0 xl:max-w-xl xl:pt-0 2xl:max-w-3xl">
         <div className="relative mx-auto flex items-center justify-center lg:h-65 lg:w-120 xl:h-140 2xl:h-170 2xl:w-180">
           <Image
-            src={'https://images.unsplash.com/photo-1572000423136-e94e163fb50b'}
+            src={'https://images.unsplash.com/photo-1574246604907-db69e30ddb97'}
             alt="hero"
             width={800}
             height={800}
             className="absolute -top-10 right-0 h-20 w-40 rounded-lg object-cover object-center shadow-lg lg:-top-10 lg:right-5 xl:top-5 xl:h-30 xl:w-50 2xl:top-10 2xl:right-5 2xl:h-40 2xl:w-60"
           />
           <Image
-            src={'https://images.unsplash.com/photo-1597247003506-42ee1e7bc7dd'}
+            src={'https://images.unsplash.com/photo-1590075865003-e48277faa558'}
             alt="hero"
             width={800}
             height={800}
-            className="absolute bottom-25 left-0 h-20 w-40 rounded-lg object-cover object-top shadow-lg lg:bottom-25 lg:left-10 xl:bottom-60 xl:left-5 xl:h-25 xl:w-50"
+            className="absolute bottom-25 left-0 h-20 w-40 rounded-lg object-cover object-bottom shadow-lg lg:bottom-25 lg:left-10 xl:bottom-60 xl:left-5 xl:h-25 xl:w-50"
           />
           <Image
-            src={'https://images.unsplash.com/photo-1514425263458-109317cc1321'}
+            src={'https://images.unsplash.com/photo-1616422840391-fa670d4b2ae7'}
             alt="hero"
             width={800}
             height={800}
-            className="absolute right-0 -bottom-5 h-10 w-60 rounded-lg object-cover object-center shadow-lg lg:right-auto lg:-bottom-7 xl:bottom-15 xl:h-15 xl:w-85"
+            className="absolute right-0 -bottom-5 h-10 w-60 rounded-lg object-cover object-top shadow-lg lg:right-auto lg:-bottom-7 xl:bottom-15 xl:h-15 xl:w-85"
           />
           <Image
-            src={'https://images.unsplash.com/photo-1733509524469-12fb3d629b7a'}
+            src={'https://images.unsplash.com/photo-1644564930499-386ed55f97c5'}
             alt="hero"
             width={800}
             height={800}

@@ -14,7 +14,12 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { cn } from '@/lib/utils';
+import { cn, formatAddress } from '@/lib/utils';
+import {
+  useAppKit,
+  useAppKitAccount,
+  useAppKitBalance,
+} from '@reown/appkit/react';
 import {
   Home,
   Menu,
@@ -26,9 +31,17 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
+
+import { Badge } from '../ui/badge';
 
 export default function Header() {
-  const menus = [
+  const { open: openWalletModal } = useAppKit();
+  const { isConnected, address } = useAppKitAccount();
+  const { fetchBalance } = useAppKitBalance();
+  const [balance, setBalance] =
+    useState<Awaited<ReturnType<typeof fetchBalance>>>();
+  const defaultMenus = [
     {
       title: (
         <span className="flex items-center justify-center gap-1.5">
@@ -56,18 +69,41 @@ export default function Header() {
       ),
       href: '/create',
     },
-    {
-      title: (
-        <span className="flex items-center justify-center gap-1.5">
-          <User className="text-primary" />
-          Profile
-        </span>
-      ),
-      href: '/profile',
-    },
   ];
+  const [menus, setMenus] = useState(defaultMenus);
 
   const pathname = usePathname();
+
+  const handleConnectWallet = () => {
+    openWalletModal({
+      view: isConnected ? 'Account' : 'Connect',
+    });
+  };
+
+  const getBalance = useCallback(async () => {
+    if (isConnected && address) {
+      const balanceData = await fetchBalance();
+      setBalance(balanceData);
+      setMenus([
+        ...defaultMenus,
+        {
+          title: (
+            <span className="flex items-center justify-center gap-1.5">
+              <User className="text-primary" />
+              Profile
+            </span>
+          ),
+          href: `/profile`,
+        },
+      ]);
+      return;
+    }
+    setMenus(defaultMenus);
+  }, [isConnected, address]);
+
+  useEffect(() => {
+    getBalance();
+  }, [getBalance]);
 
   return (
     <header className="w-full border-b border-border">
@@ -102,6 +138,7 @@ export default function Header() {
                   <Link
                     href={menu.href}
                     className="flex items-center justify-center"
+                    prefetch={false}
                   >
                     {menu.title}
                   </Link>
@@ -111,9 +148,20 @@ export default function Header() {
           </NavigationMenuList>
         </NavigationMenu>
         <div className="flex items-center gap-4">
-          <Button variant={'outline'}>
+          <Button variant={'outline'} onClick={handleConnectWallet}>
             <Wallet />
-            Connect Wallet
+            {isConnected && address ? (
+              balance ? (
+                <>
+                  {balance.data?.balance} {balance.data?.symbol}{' '}
+                  <Badge>{formatAddress(address, 3)}</Badge>
+                </>
+              ) : (
+                <span>Loading...</span>
+              )
+            ) : (
+              <span>Connect Wallet</span>
+            )}
           </Button>
           <Sheet>
             <SheetTrigger asChild>

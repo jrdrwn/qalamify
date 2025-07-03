@@ -1,16 +1,22 @@
+import { AppKitProvider } from '@/components/providers/wallet-connect';
+import EndCTA from '@/components/shared/end-cta';
+import Footer from '@/components/shared/footer';
+import Header from '@/components/shared/header';
 import { Toaster } from '@/components/ui/sonner';
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Geist_Mono, Sora } from 'next/font/google';
 
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
+import { ThemeProvider } from '@/components/shared/theme-provider';
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
+  subsets: ['latin'],
+});
+
+const soraSans = Sora({
+  variable: '--font-sora-sans',
   subsets: ['latin'],
 });
 
@@ -25,12 +31,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${soraSans.className} ${geistMono.className} antialiased`}
       >
-        {children}
-        <Toaster />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          disableTransitionOnChange
+        >
+          <AppKitProvider>
+            <Header />
+            {children}
+            <EndCTA />
+            <Footer />
+          </AppKitProvider>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
