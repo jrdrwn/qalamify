@@ -117,7 +117,7 @@ export default function Header() {
         >
           <Button className="rounded-full">
             <PencilRuler />
-            <span className="">Qalamify</span>
+            <span className="">Qalamint</span>
           </Button>
         </Link>
         <NavigationMenu>

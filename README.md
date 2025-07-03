@@ -1,6 +1,6 @@
-# Qalamify
+# Qalamint
 
-Qalamify is a Next.js-based project that integrates blockchain technology to showcase and manage calligraphy NFTs (Non-Fungible Tokens). This project allows users to explore, create, and interact with unique digital calligraphy art.
+Qalamint is a Next.js-based project that integrates blockchain technology to showcase and manage calligraphy NFTs (Non-Fungible Tokens). This project allows users to explore, create, and interact with unique digital calligraphy art.
 
 ## Features
 
@@ -24,8 +24,8 @@ Ensure you have the following installed:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your-username/qalamify.git
-   cd qalamify
+   git clone https://github.com/your-username/qalamint.git
+   cd qalamint
    ```
 
 2. Install dependencies:

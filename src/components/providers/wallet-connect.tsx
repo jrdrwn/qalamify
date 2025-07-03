@@ -15,7 +15,7 @@ const projectId = process.env.NEXT_PUBLIC_APPKIT_API_KEY || '';
 
 // 2. Create a metadata object - optional
 const metadata = {
-  name: 'Qalamify',
+  name: 'Qalamint',
   description: 'AppKit Example',
   url: 'http://localhost:3000', // origin must match your domain & subdomain
   icons: ['https://assets.reown.com/reown-profile-pic.png'],
