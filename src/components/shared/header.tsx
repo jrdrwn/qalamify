@@ -34,6 +34,7 @@ import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 import { Badge } from '../ui/badge';
+import { ModeToggle } from './theme-toggle';
 
 export default function Header() {
   const { open: openWalletModal } = useAppKit();
@@ -163,6 +164,7 @@ export default function Header() {
               <span>Connect Wallet</span>
             )}
           </Button>
+          <ModeToggle />
           <Sheet>
             <SheetTrigger asChild>
               <Button
