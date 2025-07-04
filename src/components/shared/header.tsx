@@ -1,5 +1,6 @@
 'use client';
 
+import { NFT_ABI } from '@/app/abis/nft';
 import { Button } from '@/components/ui/button';
 import {
   NavigationMenu,
@@ -15,11 +16,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { cn, formatAddress } from '@/lib/utils';
-import {
-  useAppKit,
-  useAppKitAccount,
-  useAppKitBalance,
-} from '@reown/appkit/react';
+import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
 import {
   Home,
   Menu,
@@ -32,16 +29,25 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import { useReadContract } from 'wagmi';
 
 import { Badge } from '../ui/badge';
 import { ModeToggle } from './theme-toggle';
 
 export default function Header() {
   const { open: openWalletModal } = useAppKit();
-  const { isConnected, address } = useAppKitAccount();
-  const { fetchBalance } = useAppKitBalance();
-  const [balance, setBalance] =
-    useState<Awaited<ReturnType<typeof fetchBalance>>>();
+  const { address, isConnected } = useAppKitAccount();
+
+  const { data: userProfileData } = useReadContract({
+    abi: NFT_ABI,
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
+    functionName: 'getUserProfile',
+    args: [address as `0x${string}`],
+    query: {
+      enabled: isConnected,
+    },
+  });
+
   const defaultMenus = [
     {
       title: (
@@ -81,10 +87,8 @@ export default function Header() {
     });
   };
 
-  const getBalance = useCallback(async () => {
-    if (isConnected && address) {
-      const balanceData = await fetchBalance();
-      setBalance(balanceData);
+  const checkUser = useCallback(async () => {
+    if (isConnected) {
       setMenus([
         ...defaultMenus,
         {
@@ -92,6 +96,9 @@ export default function Header() {
             <span className="flex items-center justify-center gap-1.5">
               <User className="text-primary" />
               Profile
+              {!userProfileData?.username || !userProfileData?.fullName ? (
+                <Badge>Please update!</Badge>
+              ) : null}
             </span>
           ),
           href: `/profile`,
@@ -100,11 +107,12 @@ export default function Header() {
       return;
     }
     setMenus(defaultMenus);
-  }, [isConnected, address]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected]);
 
   useEffect(() => {
-    getBalance();
-  }, [getBalance]);
+    checkUser();
+  }, [checkUser]);
 
   return (
     <header className="w-full border-b border-border">
@@ -117,7 +125,7 @@ export default function Header() {
         >
           <Button className="rounded-full">
             <PencilRuler />
-            <span className="">Qalamint</span>
+            <span className="">Qalamify</span>
           </Button>
         </Link>
         <NavigationMenu>
@@ -128,9 +136,7 @@ export default function Header() {
                   className={navigationMenuTriggerStyle({
                     className: cn(
                       'bg-transparent',
-                      pathname === menu.href
-                        ? 'underline underline-offset-2'
-                        : '',
+                      pathname === menu.href ? 'bg-muted' : '',
                     ),
                   })}
                   active={pathname === menu.href}
@@ -152,14 +158,7 @@ export default function Header() {
           <Button variant={'outline'} onClick={handleConnectWallet}>
             <Wallet />
             {isConnected && address ? (
-              balance ? (
-                <>
-                  {balance.data?.balance} {balance.data?.symbol}{' '}
-                  <Badge>{formatAddress(address, 3)}</Badge>
-                </>
-              ) : (
-                <span>Loading...</span>
-              )
+              <Badge>{formatAddress(address, 6)}</Badge>
             ) : (
               <span>Connect Wallet</span>
             )}

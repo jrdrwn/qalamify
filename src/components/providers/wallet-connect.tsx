@@ -43,7 +43,7 @@ const customNetwork = defineChain({
 const networks = [customNetwork] as [AppKitNetwork, ...AppKitNetwork[]];
 
 // 4. Create Wagmi Adapter
-const wagmiAdapter = new WagmiAdapter({
+export const wagmiAdapter = new WagmiAdapter({
   networks,
   projectId,
   ssr: true,

@@ -1,7 +1,4 @@
 import { AppKitProvider } from '@/components/providers/wallet-connect';
-import EndCTA from '@/components/shared/end-cta';
-import Footer from '@/components/shared/footer';
-import Header from '@/components/shared/header';
 import { Toaster } from '@/components/ui/sonner';
 import type { Metadata } from 'next';
 import { Geist_Mono, Sora } from 'next/font/google';
@@ -40,12 +37,7 @@ export default function RootLayout({
           defaultTheme="system"
           disableTransitionOnChange
         >
-          <AppKitProvider>
-            <Header />
-            {children}
-            <EndCTA />
-            <Footer />
-          </AppKitProvider>
+          <AppKitProvider>{children}</AppKitProvider>
           <Toaster />
         </ThemeProvider>
       </body>
