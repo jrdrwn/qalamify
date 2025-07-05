@@ -12,7 +12,7 @@ import { useAppKitAccount } from '@reown/appkit/react';
 import { Clock, ExternalLink, Flag, Heart, Share2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Address, formatEther } from 'viem';
 import { useReadContract, useWriteContract } from 'wagmi';
@@ -21,10 +21,17 @@ import ConfirmDialog from '../shared/confrm-dialog';
 import { Input } from '../ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
+// Fungsi validasi harga
+function isValidPrice(price: string | number) {
+  const num = Number(price);
+  return price !== '' && !isNaN(num) && num > 0;
+}
+
 const NFTDetail = ({ id }: { id: bigint }) => {
   const [showBuyDialog, setShowBuyDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [inputPrice, setInputPrice] = useState<string>('');
 
   const tokenId = id;
 
@@ -112,18 +119,21 @@ const NFTDetail = ({ id }: { id: bigint }) => {
       args: [marketItemData?.seller as Address],
       account: currentAddress,
     });
-  const [currentPrice, setCurrentPrice] = useState<string>('');
+  // currentPrice dari marketItemData, gunakan useMemo
+  const currentPrice = useMemo(() => {
+    if (marketItemData?.price) {
+      return formatEther(marketItemData.price);
+    }
+    return '';
+  }, [marketItemData]);
 
+  // Input price handler
   const handleCurrentPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCurrentPrice(e.target.value);
+    setInputPrice(e.target.value);
   };
 
   const handleCreateMarketItem = useCallback(async () => {
-    if (
-      !currentPrice ||
-      isNaN(Number(currentPrice)) ||
-      Number(currentPrice) <= 0
-    ) {
+    if (!isValidPrice(inputPrice)) {
       toast.error('Harga tidak valid. Harap masukkan harga yang benar.');
       return;
     }
@@ -135,7 +145,7 @@ const NFTDetail = ({ id }: { id: bigint }) => {
         args: [process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address, tokenId],
         account: currentAddress,
       });
-      const priceInWei = BigInt(Number(currentPrice) * 1e18); // Konversi ke wei
+      const priceInWei = BigInt(Number(inputPrice) * 1e18); // Konversi ke wei
       await writeContractAsync({
         address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
         abi: MARKETPLACE_NFT,
@@ -158,7 +168,7 @@ const NFTDetail = ({ id }: { id: bigint }) => {
       toast.error('Gagal menjual NFT. Silakan coba lagi.');
     }
   }, [
-    currentPrice,
+    inputPrice,
     writeContractAsync,
     tokenId,
     currentAddress,
@@ -245,11 +255,7 @@ const NFTDetail = ({ id }: { id: bigint }) => {
   ]);
 
   const handleRelistMarketItem = useCallback(async () => {
-    if (
-      !currentPrice ||
-      isNaN(Number(currentPrice)) ||
-      Number(currentPrice) <= 0
-    ) {
+    if (!isValidPrice(inputPrice)) {
       toast.error('Harga tidak valid. Harap masukkan harga yang benar.');
       return;
     }
@@ -262,7 +268,7 @@ const NFTDetail = ({ id }: { id: bigint }) => {
         args: [process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address, tokenId],
       });
 
-      const priceInWei = BigInt(Number(currentPrice) * 1e18); // Konversi ke wei
+      const priceInWei = BigInt(Number(inputPrice) * 1e18); // Konversi ke wei
       await writeContractAsync({
         address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
         abi: MARKETPLACE_NFT,
@@ -284,7 +290,7 @@ const NFTDetail = ({ id }: { id: bigint }) => {
       toast.error('Gagal mere-list NFT. Silakan coba lagi.');
     }
   }, [
-    currentPrice,
+    inputPrice,
     marketItemData?.marketItemId,
     marketItemRefetch,
     ownerOfRefetch,
@@ -324,11 +330,6 @@ const NFTDetail = ({ id }: { id: bigint }) => {
       setFavorite(isFavoriteData);
     }
   }, [isFavoriteData]);
-  useEffect(() => {
-    if (marketItemData?.price) {
-      setCurrentPrice(formatEther(marketItemData.price));
-    }
-  }, [marketItemData]);
 
   if (!tokenMetadata) {
     return <>Loading</>;
@@ -459,7 +460,9 @@ const NFTDetail = ({ id }: { id: bigint }) => {
                             type="number"
                             min={1}
                             className="z-1 flex-1 appearance-none"
-                            value={currentPrice}
+                            value={
+                              inputPrice !== '' ? inputPrice : currentPrice
+                            }
                             onChange={handleCurrentPriceChange}
                           />
                           <span className="text-sm text-muted-foreground">

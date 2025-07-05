@@ -1,18 +1,28 @@
 import { NFT_ABI } from '@/app/abis/nft';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { ChangeEvent, useCallback, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Address } from 'viem';
 import { useWriteContract } from 'wagmi';
+import z from 'zod';
+
+const formSchema = z.object({
+  name: z.string().nonempty(),
+  description: z.string().nonempty(),
+  category: z.string().nonempty(),
+});
 
 export const useCreateNFT = (address: Address | undefined) => {
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    category: '',
-    imageURL: '',
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      category: '',
+    },
   });
-  const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const { writeContractAsync } = useWriteContract();
@@ -27,132 +37,96 @@ export const useCreateNFT = (address: Address | undefined) => {
     toast.success('File uploaded successfully');
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  const onSubmit = useCallback(
+    async (values: z.infer<typeof formSchema>) => {
+      if (!address) {
+        toast.warning('Please connect to a wallet');
+        return;
+      }
+      setIsLoading(true);
 
-  const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-
-      if (
-        !formData.name ||
-        !formData.description ||
-        !formData.category ||
-        !imageFile
-      ) {
-        toast.error('Please fill in all required fields');
+      if (!imageFile) {
+        toast.error('Please upload an image file');
+        setIsLoading(false);
         return;
       }
 
-      setShowConfirm(true);
+      try {
+        const signedUrlResponse = await fetch('/api/pre-signed-url');
+        if (!signedUrlResponse.ok) {
+          toast.error('Failed to get pre-signed URL');
+          return;
+        }
+
+        const { url } = await signedUrlResponse.json();
+
+        const pinataBody = new FormData();
+
+        pinataBody.append('file', imageFile!);
+        pinataBody.append('network', 'public');
+
+        const pinataUploadResponse = await fetch(url, {
+          method: 'POST',
+          body: pinataBody,
+        });
+
+        if (!pinataUploadResponse.ok) {
+          toast.error('Pinata upload failed');
+          return;
+        }
+
+        const pinataUploadResponseData = await pinataUploadResponse.json();
+
+        if (pinataUploadResponseData.data.is_duplicate) {
+          toast.error('Metadata already exists for this CID', {
+            description: 'Please use a different image or CID.',
+          });
+          return;
+        }
+
+        const mintTokenData = await writeContractAsync({
+          address: process.env.NEXT_PUBLIC_NFT_ADDRESS! as Address,
+          abi: NFT_ABI,
+          functionName: 'mintToken',
+          args: [
+            pinataUploadResponseData.data.cid,
+            values.name,
+            values.description,
+            values.category,
+          ],
+          account: address as Address,
+        });
+
+        if (!mintTokenData) {
+          toast.error('Failed to mint NFT');
+          return;
+        }
+
+        toast.success('NFT minted successfully!', {
+          description:
+            'Your NFT has been created and is now available in your profile.',
+        });
+
+        form.reset();
+        setImageFile(null);
+      } catch (error) {
+        console.error('Minting error:', error);
+        toast.error('Failed to mint NFT', {
+          description:
+            'Please try again or contact support if the problem persists.',
+        });
+      } finally {
+        setIsLoading(false);
+      }
     },
-    [formData, imageFile],
+    [address, imageFile, writeContractAsync, form],
   );
-
-  const handleConfirmMint = useCallback(async () => {
-    if (!address) {
-      toast.warning('Please connect to a wallet');
-      return;
-    }
-    setIsLoading(true);
-    setShowConfirm(false);
-
-    try {
-      const signedUrlResponse = await fetch('/api/pre-signed-url');
-      if (!signedUrlResponse.ok) {
-        toast.error('Failed to get pre-signed URL');
-        return;
-      }
-
-      const { url } = await signedUrlResponse.json();
-
-      const pinataBody = new FormData();
-
-      pinataBody.append('file', imageFile as Blob);
-      pinataBody.append('network', 'public');
-
-      const pinataUploadResponse = await fetch(url, {
-        method: 'POST',
-        body: pinataBody,
-      });
-
-      if (!pinataUploadResponse.ok) {
-        toast.error('Pinata upload failed');
-        return;
-      }
-
-      const pinataUploadResponseData = await pinataUploadResponse.json();
-
-      const checkMetadataResponse = await fetch(
-        `/api/metadata/${pinataUploadResponseData.data.cid}`,
-      );
-      if (!checkMetadataResponse.ok) {
-        toast.error('Failed to fetch metadata', {
-          description: 'Please try again later.',
-        });
-        return;
-      }
-
-      const metadataExists = await checkMetadataResponse.json();
-      if (metadataExists.exists) {
-        toast.error('Metadata already exists for this CID', {
-          description: 'Please use a different image or CID.',
-        });
-        return;
-      }
-
-      const mintTokenData = await writeContractAsync({
-        address: process.env.NEXT_PUBLIC_NFT_ADDRESS! as Address,
-        abi: NFT_ABI,
-        functionName: 'mintToken',
-        args: [
-          pinataUploadResponseData.data.cid,
-          formData.name,
-          formData.description,
-          formData.category,
-        ],
-        account: address as Address,
-      });
-
-      if (!mintTokenData) {
-        toast.error('Failed to mint NFT');
-        return;
-      }
-
-      toast.success('NFT minted successfully!', {
-        description:
-          'Your NFT has been created and is now available in your profile.',
-      });
-
-      // Reset form
-      setFormData({
-        name: '',
-        description: '',
-        category: '',
-        imageURL: '',
-      });
-      setImageFile(null);
-    } catch (error) {
-      console.error('Minting error:', error);
-      toast.error('Failed to mint NFT', {
-        description:
-          'Please try again or contact support if the problem persists.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [address, imageFile, formData, writeContractAsync]);
 
   return {
     imageFile,
-    formData,
     isLoading,
-    showConfirm,
-    setShowConfirm,
     handleFileChange,
-    handleInputChange,
-    handleSubmit,
-    handleConfirmMint,
+    onSubmit,
+    form,
   };
 };

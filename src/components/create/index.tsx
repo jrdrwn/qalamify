@@ -1,6 +1,5 @@
 'use client';
 
-import ConfirmDialog from '@/components/shared/confrm-dialog';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -10,7 +9,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -25,21 +23,20 @@ import Image from 'next/image';
 import { Address } from 'viem';
 
 import { Badge } from '../ui/badge';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '../ui/form';
 import { useCreateNFT } from './use-create-nft';
 
 const Create = () => {
   const { address } = useAppKitAccount();
-  const {
-    imageFile,
-    formData,
-    isLoading,
-    showConfirm,
-    setShowConfirm,
-    handleFileChange,
-    handleInputChange,
-    handleSubmit,
-    handleConfirmMint,
-  } = useCreateNFT(address as Address | undefined);
+  const { imageFile, form, isLoading, handleFileChange, onSubmit } =
+    useCreateNFT(address as Address | undefined);
 
   return (
     <div className="">
@@ -111,7 +108,7 @@ const Create = () => {
                 </div>
                 {/* Preview & Preview will showing */}
                 {imageFile ? (
-                  <div className="mt-4 rounded-lg">
+                  <div className="mt-4 rounded-lg border-2 border-border p-1">
                     <Image
                       src={URL.createObjectURL(imageFile)}
                       alt="NFT Preview"
@@ -139,115 +136,125 @@ const Create = () => {
                   NFT Details
                 </CardTitle>
               </CardHeader>
-              <form
-                onSubmit={handleSubmit}
-                className="flex h-full flex-col justify-between space-y-6"
-              >
-                <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Name *</Label>
-                    <Input
-                      id="name"
-                      placeholder="Enter NFT name"
-                      value={formData.name}
-                      onChange={(e) =>
-                        handleInputChange('name', e.target.value)
-                      }
-                      required
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="flex h-full flex-col justify-between space-y-6"
+                >
+                  <CardContent className="space-y-6">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter NFT name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description *</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Describe your NFT"
-                      rows={4}
-                      value={formData.description}
-                      onChange={(e) =>
-                        handleInputChange('description', e.target.value)
-                      }
-                      className="resize-none"
-                      required
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              rows={4}
+                              className="h-16 resize-none"
+                              placeholder="Describe your NFT"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Category *</Label>
-                    <Select
-                      value={formData.category}
-                      onValueChange={(value) =>
-                        handleInputChange('category', value)
-                      }
-                      required
+                    <FormField
+                      control={form.control}
+                      name="category"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Category</FormLabel>
+                          <FormControl>
+                            <Select
+                              value={field.value}
+                              onValueChange={field.onChange}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select category" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="kufi">Kufi</SelectItem>
+                                <SelectItem value="naskhi">Naskhi</SelectItem>
+                                <SelectItem value="tsuluts">Tsuluts</SelectItem>
+                                <SelectItem value="farisi">Farisi</SelectItem>
+                                <SelectItem value="riqah">
+                                  Riq&apos;ah
+                                </SelectItem>
+                                <SelectItem value="diwani">Diwani</SelectItem>
+                                <SelectItem value="diwani-jali">
+                                  Diwani Jali
+                                </SelectItem>
+                                <SelectItem value="lainnya">Lainnya</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </CardContent>
+                  <CardFooter className="flex-col gap-2">
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      size="lg"
+                      disabled={isLoading}
                     >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="kufi">Kufi</SelectItem>
-                        <SelectItem value="naskhi">Naskhi</SelectItem>
-                        <SelectItem value="tsuluts">Tsuluts</SelectItem>
-                        <SelectItem value="farisi">Farisi</SelectItem>
-                        <SelectItem value="riqah">Riq&apos;ah</SelectItem>
-                        <SelectItem value="diwani">Diwani</SelectItem>
-                        <SelectItem value="diwani-jali">Diwani Jali</SelectItem>
-                        <SelectItem value="lainnya">Lainnya</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex-col gap-2">
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    size="lg"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-transparent" />
-                        Minting...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4" />
-                        Create NFT
-                      </>
-                    )}
-                  </Button>
-                  <p className="text-center">
-                    <span className="text-sm text-muted-foreground">
-                      By clicking &quot;Create NFT&quot;, you agree to our{' '}
-                      <a href="/terms" className="text-primary hover:underline">
-                        Terms of Service
-                      </a>{' '}
-                      and{' '}
-                      <a
-                        href="/privacy"
-                        className="text-primary hover:underline"
-                      >
-                        Privacy Policy
-                      </a>
-                      .
-                    </span>
-                  </p>
-                </CardFooter>
-              </form>
+                      {isLoading ? (
+                        <>
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-transparent" />
+                          Minting...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4" />
+                          Create NFT
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-center">
+                      <span className="text-sm text-muted-foreground">
+                        By clicking &quot;Create NFT&quot;, you agree to our{' '}
+                        <a
+                          href="/terms"
+                          className="text-primary hover:underline"
+                        >
+                          Terms of Service
+                        </a>{' '}
+                        and{' '}
+                        <a
+                          href="/privacy"
+                          className="text-primary hover:underline"
+                        >
+                          Privacy Policy
+                        </a>
+                        .
+                      </span>
+                    </p>
+                  </CardFooter>
+                </form>
+              </Form>
             </Card>
           </div>
         </div>
       </div>
-
-      <ConfirmDialog
-        open={showConfirm}
-        onOpenChange={setShowConfirm}
-        title="Confirm NFT Creation"
-        description={`Are you sure you want to mint "${formData.name}"? This action cannot be undone.`}
-        onConfirm={handleConfirmMint}
-        confirmText="Mint NFT"
-        cancelText="Cancel"
-      />
     </div>
   );
 };

@@ -10,6 +10,9 @@ import { useReadContract } from 'wagmi';
 import { Button } from '../ui/button';
 import CardNFT, { CardNFTSkeleton } from './card-nft';
 
+// Simpan address market di luar komponen agar tidak re-create setiap render
+const MARKET_ADDRESS = process.env.NEXT_PUBLIC_MARKET_ADDRESS as `0x${string}`;
+
 export default function ListNFT() {
   const searchParams = useSearchParams();
   const { address } = useAppKitAccount();
@@ -20,7 +23,7 @@ export default function ListNFT() {
     isError: isErrorAvailableMarketItems,
     refetch: availableMarketItemsRefetch,
   } = useReadContract({
-    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as `0x${string}`,
+    address: MARKET_ADDRESS,
     abi: MARKETPLACE_NFT,
     functionName: 'fetchAvailableMarketItems',
   });
@@ -35,37 +38,35 @@ export default function ListNFT() {
     [searchParams],
   );
 
+  // Helper untuk render skeleton
+  const renderSkeletons = (count: number) =>
+    Array(count)
+      .fill(0)
+      .map((_, index) => <CardNFTSkeleton key={index} />);
+
+  // Memoize hasil NFT agar tidak re-render jika tidak berubah
+  const nfts = availableMarketItems || [];
+
   return (
     <section className="container mx-auto px-2 py-16 lg:px-0">
       <div className="grid grid-cols-1 gap-x-8 gap-y-16 px-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {isLoadingAvailableMarketItems &&
-          Array(6)
-            .fill(0)
-            .map((_, index) => <CardNFTSkeleton key={index} />)}
+        {isLoadingAvailableMarketItems && renderSkeletons(6)}
         {!isLoadingAvailableMarketItems &&
-          availableMarketItems &&
-          availableMarketItems.map((nft) => (
+          nfts.length > 0 &&
+          nfts.map((nft) => (
             <CardNFT
               key={nft.marketItemId}
-              currentAccount={
-                address || process.env.NEXT_PUBLIC_MARKET_ADDRESS!
-              }
+              currentAccount={address || MARKET_ADDRESS}
               nft={nft}
               availableMarketItemsRefetch={availableMarketItemsRefetch}
             />
           ))}
-
-        {!isLoadingAvailableMarketItems &&
-          availableMarketItems?.length === 0 && (
-            <p className="col-span-4 w-full text-center text-lg font-semibold text-muted-foreground">
-              Tidak ada NFT ditemukan
-            </p>
-          )}
-        {newLoading &&
-          Array(3)
-            .fill(0)
-            .map((_, index) => <CardNFTSkeleton key={index} />)}
-
+        {!isLoadingAvailableMarketItems && nfts.length === 0 && (
+          <p className="col-span-4 w-full text-center text-lg font-semibold text-muted-foreground">
+            Tidak ada NFT ditemukan
+          </p>
+        )}
+        {newLoading && renderSkeletons(3)}
         {isErrorAvailableMarketItems && (
           <p>There was an error loading the NFTs. Please try again later.</p>
         )}
@@ -75,13 +76,6 @@ export default function ListNFT() {
           <Button
             variant="outline"
             onClick={async () => {
-              // setNewLoading(true);
-              // const res = await fetch(
-              //   `/api/nft?${createQueryString('skip', nfts.length.toString())}`,
-              // );
-              // const data = await res.json();
-              // setNewLoading(false);
-              // setNFTs((prev) => [...prev, ...data]);
               toast.info('Fitur ini akan segera hadir!');
             }}
             className="mx-auto mt-8"
