@@ -68,6 +68,7 @@ export const useCreateNFT = (address: Address | undefined) => {
       const { url } = await signedUrlResponse.json();
 
       const pinataBody = new FormData();
+
       pinataBody.append('file', imageFile as Blob);
       pinataBody.append('network', 'public');
 
@@ -82,6 +83,24 @@ export const useCreateNFT = (address: Address | undefined) => {
       }
 
       const pinataUploadResponseData = await pinataUploadResponse.json();
+
+      const checkMetadataResponse = await fetch(
+        `/api/metadata/${pinataUploadResponseData.data.cid}`,
+      );
+      if (!checkMetadataResponse.ok) {
+        toast.error('Failed to fetch metadata', {
+          description: 'Please try again later.',
+        });
+        return;
+      }
+
+      const metadataExists = await checkMetadataResponse.json();
+      if (metadataExists.exists) {
+        toast.error('Metadata already exists for this CID', {
+          description: 'Please use a different image or CID.',
+        });
+        return;
+      }
 
       const mintTokenData = await writeContractAsync({
         address: process.env.NEXT_PUBLIC_NFT_ADDRESS! as Address,

@@ -29,18 +29,13 @@ app.get('/metadata/:cid', async (c) => {
   const { cid } = c.req.param();
   const fileRes = await pinata.files.public.list().cid(cid);
   const file = fileRes.files[0];
-  return c.json(file);
+  if (!file) {
+    return c.json({ exists: false });
+  }
+  return c.json({
+    exists: true,
+  });
 });
-
-// app.put('/atributes/:cid', async (c) => {
-//   const cid = c.req.param('cid');
-//   const data = await c.req.json();
-//   const { name, description, category, tokenId, createdAt } = data;
-//   const
-//   return c.json({
-//     message: 'Attributes saved successfully',
-//   });
-// });
 
 export const GET = handle(app);
 export const POST = handle(app);
