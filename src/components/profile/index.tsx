@@ -13,7 +13,7 @@ import { editProfileFormSchema } from './edit-form';
 import Profile from './profile-card';
 
 export const OtherProfile = ({ address }: { address: Address }) => {
-  const { data: profile } = useReadContract({
+  const { data: profile, refetch: refetchProfile } = useReadContract({
     address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
     abi: NFT_ABI,
     functionName: 'getUserProfile',
@@ -21,39 +21,66 @@ export const OtherProfile = ({ address }: { address: Address }) => {
     account: address,
   });
 
-  const { data: userStatisticsData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
-    abi: MARKETPLACE_NFT,
-    functionName: 'getUserStatistics',
-    args: [address],
-    account: address,
-  });
+  const { data: userStatisticsData, refetch: userStatisticsRefetch } =
+    useReadContract({
+      address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+      abi: MARKETPLACE_NFT,
+      functionName: 'getUserStatistics',
+      args: [address],
+      account: address,
+    });
 
-  const { data: tokensOwnedByMeData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
-    abi: NFT_ABI,
-    functionName: 'getTokensOwnedByMe',
-    account: address,
-  });
-
-  const { data: tokensCreatedByMeData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
-    abi: NFT_ABI,
-    functionName: 'getTokensCreatedByMe',
-    account: address,
-  });
-
-  const { data: favoritesData } = useReadContract({
+  const { data: tokensOwnedByMeData, refetch: tokensOwnedByMeRefetch } =
+    useReadContract({
+      address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+      abi: NFT_ABI,
+      functionName: 'getTokensOwnedByMe',
+      account: address,
+    });
+  const { data: tokensCreatedByMeData, refetch: tokensCreatedByMeRefetch } =
+    useReadContract({
+      address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+      abi: NFT_ABI,
+      functionName: 'getTokensCreatedByMe',
+      account: address,
+    });
+  const { data: favoritesData, refetch: favoritesRefetch } = useReadContract({
     address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
     abi: NFT_ABI,
     functionName: 'getFavorites',
     account: address,
   });
 
+  const { data: fetchItemsBySellerData, refetch: fetchItemsBySellerRefetch } =
+    useReadContract({
+      address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+      abi: MARKETPLACE_NFT,
+      functionName: 'fetchItemsBySeller',
+      args: [address],
+      account: address,
+    });
+
+  const refetchAllData = async () => {
+    await Promise.all([
+      userStatisticsRefetch(),
+      tokensOwnedByMeRefetch(),
+      tokensCreatedByMeRefetch(),
+      favoritesRefetch(),
+      refetchProfile(),
+      fetchItemsBySellerRefetch(),
+    ]);
+  };
+
+  refetchAllData().catch((error) => {
+    console.error('Error refetching data:', error);
+    toast.error('Failed to refetch data');
+  });
+
   return (
     <Profile
       address={address}
       profile={profile}
+      fetchItemsBySellerData={fetchItemsBySellerData}
       userStatisticsData={userStatisticsData}
       tokensOwnedByMeData={tokensOwnedByMeData}
       tokensCreatedByMeData={tokensCreatedByMeData}
@@ -107,6 +134,15 @@ export const MyProfile = () => {
     account: address,
   });
 
+  const { data: fetchItemsBySellerData, refetch: fetchItemsBySellerRefetch } =
+    useReadContract({
+      address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+      abi: MARKETPLACE_NFT,
+      functionName: 'fetchItemsBySeller',
+      args: [address],
+      account: address,
+    });
+
   const refetchAllData = async () => {
     await Promise.all([
       userStatisticsRefetch(),
@@ -114,6 +150,7 @@ export const MyProfile = () => {
       tokensCreatedByMeRefetch(),
       favoritesRefetch(),
       refetchProfile(),
+      fetchItemsBySellerRefetch(),
     ]);
   };
 
@@ -153,12 +190,13 @@ export const MyProfile = () => {
 
   return (
     <Profile
-      address={address as Address}
+      address={address}
       profile={profile}
       userStatisticsData={userStatisticsData}
       tokensOwnedByMeData={tokensOwnedByMeData}
       tokensCreatedByMeData={tokensCreatedByMeData}
       favoritesData={favoritesData}
+      fetchItemsBySellerData={fetchItemsBySellerData}
       isEditable
       isUpdateProfileLoading={isUpdateProfileLoading}
       onEditProfile={handleEditProfile}

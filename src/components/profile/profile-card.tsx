@@ -5,11 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Copy, ExternalLink, Heart, Plus, Wallet } from 'lucide-react';
+import { Copy, ExternalLink, Heart, Plus, Store, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { Address, formatEther } from 'viem';
 import { z } from 'zod';
 
+import { INFT } from '../explore/card-nft';
 import { Skeleton } from '../ui/skeleton';
 import CardNFTViewed from './card-nft';
 import EditProfileForm, { editProfileFormSchema } from './edit-form';
@@ -21,6 +22,7 @@ interface ProfileProps {
   tokensOwnedByMeData?: readonly bigint[];
   tokensCreatedByMeData?: readonly bigint[];
   favoritesData?: readonly bigint[];
+  fetchItemsBySellerData?: readonly INFT[];
   isEditable?: boolean;
   onEditProfile?: (values: z.infer<typeof editProfileFormSchema>) => void;
   isUpdateProfileLoading?: boolean;
@@ -32,6 +34,7 @@ const Profile = ({
   userStatisticsData,
   tokensOwnedByMeData,
   tokensCreatedByMeData,
+  fetchItemsBySellerData,
   favoritesData,
   isEditable = false,
   onEditProfile,
@@ -106,7 +109,7 @@ const Profile = ({
               </div>
 
               {/* Stats Grid */}
-              <div className="mt-8 grid grid-cols-2 gap-6 border-t border-border pt-8 sm:grid-cols-4 lg:grid-cols-6">
+              <div className="mt-8 grid grid-cols-2 gap-6 border-t border-border pt-8 sm:grid-cols-5 lg:grid-cols-7">
                 <div className="text-center">
                   <div className="text-2xl font-bold">
                     {tokensCreatedByMeData?.length || 0}
@@ -124,6 +127,12 @@ const Profile = ({
                     {favoritesData?.length || 0}
                   </div>
                   <div className="text-sm text-foreground/50">Favorited</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold">
+                    {fetchItemsBySellerData?.length || 0}
+                  </div>
+                  <div className="text-sm text-foreground/50">For Sale</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary">
@@ -206,13 +215,17 @@ const Profile = ({
                   <Heart className="mr-2 h-4 w-4" />
                   Favorited
                 </TabsTrigger>
+                <TabsTrigger value="for-sale">
+                  <Store className="mr-2 h-4 w-4" />
+                  For Sale
+                </TabsTrigger>
               </TabsList>
             </CardHeader>
             <CardContent>
               <TabsContent value="owned">
                 <div className="grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {tokensOwnedByMeData?.length === 0 && (
-                    <p className="col-span-full text-center text-gray-500">
+                    <p className="col-span-full text-center text-muted-foreground">
                       No NFTs owned yet.
                     </p>
                   )}
@@ -225,7 +238,7 @@ const Profile = ({
               <TabsContent value="created">
                 <div className="grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {tokensCreatedByMeData?.length === 0 && (
-                    <p className="col-span-full text-center text-gray-500">
+                    <p className="col-span-full text-center text-muted-foreground">
                       No NFTs created yet.
                     </p>
                   )}
@@ -238,12 +251,25 @@ const Profile = ({
               <TabsContent value="favorited">
                 <div className="grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {favoritesData?.length === 0 && (
-                    <p className="col-span-full text-center text-gray-500">
+                    <p className="col-span-full text-center text-muted-foreground">
                       No NFTs favorited yet.
                     </p>
                   )}
                   {favoritesData?.map((tokenId) => (
                     <CardNFTViewed key={tokenId.toString()} tokenId={tokenId} />
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="for-sale">
+                <div className="grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {fetchItemsBySellerData?.length === 0 && (
+                    <p className="col-span-full text-center text-muted-foreground">
+                      No NFTs for sale yet.
+                    </p>
+                  )}
+                  {fetchItemsBySellerData?.map((nft) => (
+                    <CardNFTViewed key={nft.tokenId} tokenId={nft.tokenId} />
                   ))}
                 </div>
               </TabsContent>
