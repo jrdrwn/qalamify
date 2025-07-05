@@ -1,6 +1,6 @@
 'use client';
 
-import MarketplaceNFT from '@/app/abis/Marketplace.json';
+import { MARKETPLACE_NFT } from '@/app/abis/marketplace';
 import { useAppKitAccount } from '@reown/appkit/react';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useState } from 'react';
@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { useReadContract } from 'wagmi';
 
 import { Button } from '../ui/button';
-import CardNFT, { CardNFTSkeleton, INFT } from './card-nft';
+import CardNFT, { CardNFTSkeleton } from './card-nft';
 
 export default function ListNFT() {
   const searchParams = useSearchParams();
@@ -18,22 +18,12 @@ export default function ListNFT() {
     data: availableMarketItems,
     isLoading: isLoadingAvailableMarketItems,
     isError: isErrorAvailableMarketItems,
+    refetch: availableMarketItemsRefetch,
   } = useReadContract({
     address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as `0x${string}`,
-    abi: MarketplaceNFT.abi,
+    abi: MARKETPLACE_NFT,
     functionName: 'fetchAvailableMarketItems',
-    // args: [
-    // address, // Owner address
-    // searchParams.get('skip') ? parseInt(searchParams.get('skip') as string) : 0, // Skip parameter
-    // 6, // Limit to 6 NFTs per request
-    // ],
-    // watch: true,
-    // account: process.env.NEXT_PUBLIC_MARKET_ADDRESS as `0x${string}`,
-  }) as {
-    data: INFT[];
-    isLoading: boolean;
-    isError: boolean;
-  };
+  });
 
   const createQueryString = useCallback(
     (name: string, value: string) => {
@@ -61,12 +51,13 @@ export default function ListNFT() {
                 address || process.env.NEXT_PUBLIC_MARKET_ADDRESS!
               }
               nft={nft}
+              availableMarketItemsRefetch={availableMarketItemsRefetch}
             />
           ))}
 
         {!isLoadingAvailableMarketItems &&
-          availableMarketItems.length === 0 && (
-            <p className="w-full text-center text-lg font-semibold text-muted-foreground">
+          availableMarketItems?.length === 0 && (
+            <p className="col-span-4 w-full text-center text-lg font-semibold text-muted-foreground">
               Tidak ada NFT ditemukan
             </p>
           )}

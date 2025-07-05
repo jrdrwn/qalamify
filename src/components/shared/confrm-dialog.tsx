@@ -33,16 +33,16 @@ const ConfirmDialog = ({
 }: ConfirmDialogProps) => {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="bg-white/95 backdrop-blur-sm">
+      <AlertDialogContent>
         <AlertDialogHeader>
           <div className="mb-2 flex items-center gap-3">
             {variant === 'destructive' ? (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
               </div>
             ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-                <CheckCircle className="h-5 w-5 text-blue-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20">
+                <CheckCircle className="h-5 w-5 text-primary" />
               </div>
             )}
             <AlertDialogTitle className="text-xl">{title}</AlertDialogTitle>
@@ -56,7 +56,9 @@ const ConfirmDialog = ({
           <AlertDialogAction
             onClick={onConfirm}
             className={
-              variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : ''
+              variant === 'destructive'
+                ? 'bg-destructive hover:bg-destructive/80'
+                : ''
             }
           >
             {confirmText}

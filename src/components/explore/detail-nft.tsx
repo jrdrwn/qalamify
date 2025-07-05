@@ -1,7 +1,7 @@
 'use client';
 
-import KaligrafiNFT from '@/app/abis/KaligrafiNFT.json';
-import MarketplaceNFT from '@/app/abis/Marketplace.json';
+import { MARKETPLACE_NFT } from '@/app/abis/marketplace';
+import { NFT_ABI } from '@/app/abis/nft';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { FileListItem } from 'pinata';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { formatEther } from 'viem';
+import { Address, formatEther } from 'viem';
 import { useReadContract, useWriteContract } from 'wagmi';
 
 import ConfirmDialog from '../shared/confrm-dialog';
@@ -30,141 +30,79 @@ const NFTDetail = ({ id }: { id: bigint }) => {
   const tokenId = id;
 
   const { address: currentAddress } = useAppKitAccount() as {
-    address: `0x${string}`;
+    address: Address;
   };
 
   const { data: tokenURIData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
-    abi: KaligrafiNFT.abi,
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+    abi: NFT_ABI,
     functionName: 'tokenURI',
     args: [tokenId],
     account: currentAddress,
   });
   const { data: tokenCreatorData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
-    abi: KaligrafiNFT.abi,
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+    abi: NFT_ABI,
     functionName: 'getTokenCreatorById',
     args: [tokenId],
     account: currentAddress,
-  }) as {
-    data: `0x${string}` | undefined;
-  };
+  });
   const { data: userProfileData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
-    abi: KaligrafiNFT.abi,
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+    abi: NFT_ABI,
     functionName: 'getUserProfile',
-    args: [tokenCreatorData],
+    args: [tokenCreatorData as Address],
     account: currentAddress,
-  }) as {
-    data:
-      | {
-          username: string;
-          fullName: string;
-          bio: string;
-          twitter: string;
-          instagram: string;
-          email: string;
-          avatarURL: string;
-          location: string;
-        }
-      | undefined;
-  };
+  });
 
   const { data: isFavoriteData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
-    abi: KaligrafiNFT.abi,
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+    abi: NFT_ABI,
     functionName: 'isFavorite',
     args: [tokenId],
     account: currentAddress,
-  }) as {
-    data: boolean | undefined;
-  };
+  });
   const { writeContractAsync } = useWriteContract();
   const [favorite, setFavorite] = useState(false);
   const [metadata, setMetadata] = useState<FileListItem | null>(null);
 
   const { data: marketItemData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as `0x${string}`,
-    abi: MarketplaceNFT.abi,
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
     functionName: 'getMarketItemByTokenId',
     args: [tokenId],
-    account: currentAddress as `0x${string}`,
-  }) as {
-    data:
-      | {
-          marketItemId: bigint;
-          nftContract: string;
-          tokenId: bigint;
-          creator: string;
-          seller: string;
-          owner: string;
-          price: bigint;
-          sold: boolean;
-          canceled: boolean;
-        }
-      | undefined;
-  };
+    account: currentAddress as Address,
+  });
 
   const { data: ownerOfData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
-    abi: KaligrafiNFT.abi,
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+    abi: NFT_ABI,
     functionName: 'ownerOf',
     args: [tokenId],
     account: currentAddress,
-  }) as {
-    data: `0x${string}` | undefined;
-  };
+  });
   const { data: ownershipHistoryData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
-    abi: KaligrafiNFT.abi,
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+    abi: NFT_ABI,
     functionName: 'getOwnershipHistory',
     args: [tokenId],
     account: currentAddress,
-  }) as {
-    data: `0x${string}`[] | undefined;
-  };
+  });
 
   const { data: userProfileOwnerOfData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
-    abi: KaligrafiNFT.abi,
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+    abi: NFT_ABI,
     functionName: 'getUserProfile',
-    args: [ownerOfData],
+    args: [ownerOfData as Address],
     account: currentAddress,
-  }) as {
-    data:
-      | {
-          username: string;
-          fullName: string;
-          bio: string;
-          twitter: string;
-          instagram: string;
-          email: string;
-          avatarURL: string;
-          location: string;
-        }
-      | undefined;
-  };
+  });
   const { data: userProfileSellerData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
-    abi: KaligrafiNFT.abi,
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+    abi: NFT_ABI,
     functionName: 'getUserProfile',
-    args: [marketItemData?.seller],
+    args: [marketItemData?.seller as Address],
     account: currentAddress,
-  }) as {
-    data:
-      | {
-          username: string;
-          fullName: string;
-          bio: string;
-          twitter: string;
-          instagram: string;
-          email: string;
-          avatarURL: string;
-          location: string;
-        }
-      | undefined;
-  };
-
+  });
   const [currentPrice, setCurrentPrice] = useState<string>('');
 
   const handleCurrentPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -182,18 +120,22 @@ const NFTDetail = ({ id }: { id: bigint }) => {
     }
     try {
       await writeContractAsync({
-        address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
-        abi: KaligrafiNFT.abi,
+        address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+        abi: NFT_ABI,
         functionName: 'approve',
-        args: [process.env.NEXT_PUBLIC_MARKET_ADDRESS, tokenId],
+        args: [process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address, tokenId],
         account: currentAddress,
       });
       const priceInWei = BigInt(Number(currentPrice) * 1e18); // Konversi ke wei
       await writeContractAsync({
-        address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as `0x${string}`,
-        abi: MarketplaceNFT.abi,
+        address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+        abi: MARKETPLACE_NFT,
         functionName: 'createMarketItem',
-        args: [process.env.NEXT_PUBLIC_NFT_ADDRESS, tokenId, priceInWei],
+        args: [
+          process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+          tokenId,
+          priceInWei,
+        ],
         account: currentAddress,
       });
       toast.success('NFT berhasil dijual!');
@@ -209,14 +151,14 @@ const NFTDetail = ({ id }: { id: bigint }) => {
     }
     try {
       await writeContractAsync({
-        address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as `0x${string}`,
-        abi: MarketplaceNFT.abi,
+        address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+        abi: MARKETPLACE_NFT,
         functionName: 'cancelMarketItem',
         args: [
-          process.env.NEXT_PUBLIC_NFT_ADDRESS,
+          process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
           marketItemData.marketItemId,
         ],
-        account: currentAddress as `0x${string}`,
+        account: currentAddress as Address,
       });
       toast.success('NFT berhasil dibatalkan dari pasar!');
     } catch (error) {
@@ -232,12 +174,12 @@ const NFTDetail = ({ id }: { id: bigint }) => {
     }
     try {
       await writeContractAsync({
-        address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as `0x${string}`,
-        abi: MarketplaceNFT.abi,
+        address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+        abi: MARKETPLACE_NFT,
         functionName: 'createMarketSale',
         args: [
-          process.env.NEXT_PUBLIC_NFT_ADDRESS,
-          marketItemData?.marketItemId,
+          process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+          marketItemData?.marketItemId as bigint,
         ],
         account: currentAddress,
         value: marketItemData?.price,
@@ -265,20 +207,20 @@ const NFTDetail = ({ id }: { id: bigint }) => {
     try {
       // approve nft
       await writeContractAsync({
-        address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
-        abi: KaligrafiNFT.abi,
+        address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+        abi: NFT_ABI,
         functionName: 'approve',
-        args: [process.env.NEXT_PUBLIC_MARKET_ADDRESS, tokenId],
+        args: [process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address, tokenId],
       });
 
       const priceInWei = BigInt(Number(currentPrice) * 1e18); // Konversi ke wei
       await writeContractAsync({
-        address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as `0x${string}`,
-        abi: MarketplaceNFT.abi,
+        address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+        abi: MARKETPLACE_NFT,
         functionName: 'relistMarketItem',
         args: [
-          process.env.NEXT_PUBLIC_NFT_ADDRESS,
-          marketItemData?.marketItemId,
+          process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+          marketItemData?.marketItemId as bigint,
           priceInWei,
         ],
       });
@@ -296,8 +238,8 @@ const NFTDetail = ({ id }: { id: bigint }) => {
     }
     try {
       await writeContractAsync({
-        address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
-        abi: KaligrafiNFT.abi,
+        address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+        abi: NFT_ABI,
         functionName: favorite ? 'removeFavorite' : 'addFavorite',
         args: [tokenId],
       });

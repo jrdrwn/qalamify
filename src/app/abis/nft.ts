@@ -442,6 +442,47 @@ export const NFT_ABI = [
     type: 'function',
   },
   {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: 'tokenId',
+        type: 'uint256',
+      },
+    ],
+    name: 'getTokenMetadata',
+    outputs: [
+      {
+        components: [
+          {
+            internalType: 'string',
+            name: 'name',
+            type: 'string',
+          },
+          {
+            internalType: 'string',
+            name: 'description',
+            type: 'string',
+          },
+          {
+            internalType: 'uint256',
+            name: 'mintingAt',
+            type: 'uint256',
+          },
+          {
+            internalType: 'string',
+            name: 'category',
+            type: 'string',
+          },
+        ],
+        internalType: 'struct KaligrafiNFT.TokenMetadata',
+        name: '',
+        type: 'tuple',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
     inputs: [],
     name: 'getTokensCreatedByMe',
     outputs: [
@@ -579,6 +620,21 @@ export const NFT_ABI = [
       {
         internalType: 'string',
         name: 'tokenURI',
+        type: 'string',
+      },
+      {
+        internalType: 'string',
+        name: 'name',
+        type: 'string',
+      },
+      {
+        internalType: 'string',
+        name: 'description',
+        type: 'string',
+      },
+      {
+        internalType: 'string',
+        name: 'category',
         type: 'string',
       },
     ],

@@ -1,14 +1,14 @@
-import KaligrafiNFT from '@/app/abis/KaligrafiNFT.json';
-import MarketplaceNFT from '@/app/abis/Marketplace.json';
+import { MARKETPLACE_NFT } from '@/app/abis/marketplace';
+import { NFT_ABI } from '@/app/abis/nft';
 import { formatAddress } from '@/lib/utils';
 import { useAppKitAccount } from '@reown/appkit/react';
 import { Heart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { FileListItem } from 'pinata';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { formatEther } from 'viem';
+import { Address, formatEther } from 'viem';
 import { useReadContract, useWriteContract } from 'wagmi';
 
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -42,90 +42,64 @@ export function CardNFTSkeleton() {
 }
 
 export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
+  const router = useRouter();
   const { address: currentAddress } = useAppKitAccount() as {
-    address: `0x${string}`;
+    address: Address;
   };
   const { data: tokenURIData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
-    abi: KaligrafiNFT.abi,
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+    abi: NFT_ABI,
     functionName: 'tokenURI',
     args: [tokenId],
     account: currentAddress,
   });
   const { data: tokenCreatorData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
-    abi: KaligrafiNFT.abi,
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+    abi: NFT_ABI,
     functionName: 'getTokenCreatorById',
     args: [tokenId],
     account: currentAddress,
-  }) as {
-    data: `0x${string}` | undefined;
-  };
+  });
   const { data: userProfileData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
-    abi: KaligrafiNFT.abi,
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+    abi: NFT_ABI,
     functionName: 'getUserProfile',
-    args: [tokenCreatorData],
+    args: [tokenCreatorData as Address],
     account: currentAddress,
-  }) as {
-    data:
-      | {
-          username: string;
-          fullName: string;
-          bio: string;
-          twitter: string;
-          instagram: string;
-          email: string;
-          avatarURL: string;
-          location: string;
-        }
-      | undefined;
-  };
-
+  });
   const { data: isFavoriteData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
-    abi: KaligrafiNFT.abi,
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+    abi: NFT_ABI,
     functionName: 'isFavorite',
     args: [tokenId],
     account: currentAddress,
-  }) as {
-    data: boolean | undefined;
-  };
+  });
   const { writeContractAsync } = useWriteContract();
   const [favorite, setFavorite] = useState(false);
-  const [metadata, setMetadata] = useState<FileListItem | null>(null);
 
-  const { data: marketItemData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as `0x${string}`,
-    abi: MarketplaceNFT.abi,
+  const { data: marketItemData, refetch: marketItemRefetch } = useReadContract({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
     functionName: 'getMarketItemByTokenId',
     args: [tokenId],
-    account: currentAddress as `0x${string}`,
-  }) as {
-    data:
-      | {
-          marketItemId: bigint;
-          nftContract: string;
-          tokenId: bigint;
-          creator: string;
-          seller: string;
-          owner: string;
-          price: bigint;
-          sold: boolean;
-          canceled: boolean;
-        }
-      | undefined;
-  };
+    account: currentAddress,
+  });
 
-  const { data: ownerOfData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
-    abi: KaligrafiNFT.abi,
+  const { data: ownerOfData, refetch: ownerOfRefetch } = useReadContract({
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+    abi: NFT_ABI,
     functionName: 'ownerOf',
     args: [tokenId],
     account: currentAddress,
-  }) as {
-    data: `0x${string}` | undefined;
-  };
+  });
+
+  const { data: tokenMetadata, refetch: tokenMetadataRefetch } =
+    useReadContract({
+      address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+      abi: NFT_ABI,
+      functionName: 'getTokenMetadata',
+      args: [tokenId],
+    });
 
   const [currentPrice, setCurrentPrice] = useState<string>('');
 
@@ -145,26 +119,43 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
     try {
       // if sold approve again
       await writeContractAsync({
-        address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
-        abi: KaligrafiNFT.abi,
+        address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+        abi: NFT_ABI,
         functionName: 'approve',
-        args: [process.env.NEXT_PUBLIC_MARKET_ADDRESS, tokenId],
+        args: [process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address, tokenId],
         account: currentAddress,
       });
       const priceInWei = BigInt(Number(currentPrice) * 1e18); // Konversi ke wei
       await writeContractAsync({
-        address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as `0x${string}`,
-        abi: MarketplaceNFT.abi,
+        address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+        abi: MARKETPLACE_NFT,
         functionName: 'createMarketItem',
-        args: [process.env.NEXT_PUBLIC_NFT_ADDRESS, tokenId, priceInWei],
+        args: [
+          process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+          tokenId,
+          priceInWei,
+        ],
         account: currentAddress,
       });
+      await marketItemRefetch();
+      await ownerOfRefetch();
+      await tokenMetadataRefetch();
+      router.refresh();
       toast.success('NFT berhasil dijual!');
     } catch (error) {
       console.error('Error creating market item:', error);
       toast.error('Gagal menjual NFT. Silakan coba lagi.');
     }
-  }, [currentPrice, currentAddress, tokenId, writeContractAsync]);
+  }, [
+    currentPrice,
+    writeContractAsync,
+    tokenId,
+    currentAddress,
+    marketItemRefetch,
+    ownerOfRefetch,
+    tokenMetadataRefetch,
+    router,
+  ]);
 
   const handleCancelMarketItem = useCallback(async () => {
     if (!marketItemData) {
@@ -172,21 +163,33 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
     }
     try {
       await writeContractAsync({
-        address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as `0x${string}`,
-        abi: MarketplaceNFT.abi,
+        address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+        abi: MARKETPLACE_NFT,
         functionName: 'cancelMarketItem',
         args: [
-          process.env.NEXT_PUBLIC_NFT_ADDRESS,
+          process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
           marketItemData.marketItemId,
         ],
-        account: currentAddress as `0x${string}`,
+        account: currentAddress,
       });
+      await marketItemRefetch();
+      await ownerOfRefetch();
+      await tokenMetadataRefetch();
+      router.refresh();
       toast.success('NFT berhasil dibatalkan dari pasar!');
     } catch (error) {
       console.error('Error canceling market item:', error);
       toast.error('Gagal membatalkan NFT dari pasar. Silakan coba lagi.');
     }
-  }, [currentAddress, marketItemData, writeContractAsync]);
+  }, [
+    currentAddress,
+    marketItemData,
+    marketItemRefetch,
+    ownerOfRefetch,
+    router,
+    tokenMetadataRefetch,
+    writeContractAsync,
+  ]);
 
   const handleCreateMarketSale = useCallback(async () => {
     if (!currentAddress) {
@@ -195,16 +198,20 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
     }
     try {
       await writeContractAsync({
-        address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as `0x${string}`,
-        abi: MarketplaceNFT.abi,
+        address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+        abi: MARKETPLACE_NFT,
         functionName: 'createMarketSale',
         args: [
-          process.env.NEXT_PUBLIC_NFT_ADDRESS,
-          marketItemData?.marketItemId,
+          process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+          marketItemData?.marketItemId as bigint,
         ],
         account: currentAddress,
         value: marketItemData?.price,
       });
+      await marketItemRefetch();
+      await ownerOfRefetch();
+      await tokenMetadataRefetch();
+      router.refresh();
       toast.success('Pembelian NFT berhasil!');
     } catch (error) {
       console.error('Error creating market sale:', error);
@@ -214,8 +221,13 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
     currentAddress,
     marketItemData?.marketItemId,
     marketItemData?.price,
+    marketItemRefetch,
+    ownerOfRefetch,
+    router,
+    tokenMetadataRefetch,
     writeContractAsync,
   ]);
+
   const handleRelistMarketItem = useCallback(async () => {
     if (
       !currentPrice ||
@@ -228,29 +240,42 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
     try {
       // approve nft
       await writeContractAsync({
-        address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
-        abi: KaligrafiNFT.abi,
+        address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+        abi: NFT_ABI,
         functionName: 'approve',
-        args: [process.env.NEXT_PUBLIC_MARKET_ADDRESS, tokenId],
+        args: [process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address, tokenId],
       });
 
       const priceInWei = BigInt(Number(currentPrice) * 1e18); // Konversi ke wei
       await writeContractAsync({
-        address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as `0x${string}`,
-        abi: MarketplaceNFT.abi,
+        address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+        abi: MARKETPLACE_NFT,
         functionName: 'relistMarketItem',
         args: [
-          process.env.NEXT_PUBLIC_NFT_ADDRESS,
-          marketItemData?.marketItemId,
+          process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+          marketItemData?.marketItemId as bigint,
           priceInWei,
         ],
       });
+      await marketItemRefetch();
+      await ownerOfRefetch();
+      await tokenMetadataRefetch();
+      router.refresh();
       toast.success('NFT berhasil direlist!');
     } catch (error) {
       console.error('Error relisting market item:', error);
       toast.error('Gagal mere-list NFT. Silakan coba lagi.');
     }
-  }, [currentPrice, marketItemData?.marketItemId, tokenId, writeContractAsync]);
+  }, [
+    currentPrice,
+    marketItemData?.marketItemId,
+    marketItemRefetch,
+    ownerOfRefetch,
+    router,
+    tokenId,
+    tokenMetadataRefetch,
+    writeContractAsync,
+  ]);
 
   const handleFavoriteToggle = useCallback(async () => {
     if (!currentAddress) {
@@ -259,40 +284,24 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
     }
     try {
       await writeContractAsync({
-        address: process.env.NEXT_PUBLIC_NFT_ADDRESS as `0x${string}`,
-        abi: KaligrafiNFT.abi,
+        address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+        abi: NFT_ABI,
         functionName: favorite ? 'removeFavorite' : 'addFavorite',
         args: [tokenId],
       });
       setFavorite(!favorite);
+
       toast.success(
         `NFT telah ${favorite ? 'dihapus dari' : 'ditambahkan ke'} daftar favorit Anda!`,
       );
+      router.refresh();
     } catch (error) {
       console.error('Error toggling favorite:', error);
       toast.error(
         `Gagal ${favorite ? 'menghapus' : 'menambahkan'} NFT ke daftar favorit. Silakan coba lagi.`,
       );
     }
-  }, [currentAddress, favorite, tokenId, writeContractAsync]);
-
-  const getMetadata = useCallback(async () => {
-    if (!tokenURIData) return;
-
-    const res = await fetch(`/api/metadata/${tokenURIData}`, {
-      cache: 'force-cache',
-    });
-    if (!res.ok) {
-      toast.error('Gagal mengambil metadata NFT');
-      return;
-    }
-    const json = await res.json();
-    setMetadata(json);
-  }, [tokenURIData]);
-
-  useEffect(() => {
-    getMetadata();
-  }, [getMetadata]);
+  }, [currentAddress, favorite, router, tokenId, writeContractAsync]);
 
   useEffect(() => {
     if (isFavoriteData !== undefined) {
@@ -304,7 +313,7 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
       setCurrentPrice(formatEther(marketItemData.price));
     }
   }, [marketItemData]);
-  if (metadata === null) {
+  if (tokenMetadata === null) {
     return (
       <Card className="relative col-span-1 gap-2 pt-42 pb-4">
         <Skeleton className="absolute -top-8 left-1/2 h-46 w-[calc(100%-1rem)] -translate-x-1/2 rounded-lg" />
@@ -321,8 +330,8 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
   return (
     <Card className="relative col-span-1 gap-2 pt-42 pb-4">
       <Image
-        src={`${process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL}/ipfs/${metadata?.cid}`}
-        alt={metadata?.name || 'NFT Image'}
+        src={`${process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL}/ipfs/${tokenURIData}`}
+        alt={tokenMetadata?.name || 'NFT Image'}
         width={800}
         height={800}
         className="absolute -top-8 left-1/2 h-46 w-[calc(100%-1rem)] -translate-x-1/2 rounded-lg bg-muted-foreground object-cover object-center"
@@ -339,15 +348,16 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
         <div className="flex items-center gap-3">
           <Avatar className="size-5">
             <AvatarImage
-              src={userProfileData?.avatarURL || '/default-avatar.png'}
+              src={userProfileData?.avatarURL}
               className="object-cover object-center"
             />
             <AvatarFallback>
-              {currentAddress && currentAddress[0]}
+              {userProfileData?.username[0] ||
+                (currentAddress && currentAddress[0])}
             </AvatarFallback>
           </Avatar>
           <CardTitle className="line-clamp-1 leading-normal text-ellipsis">
-            {metadata?.keyvalues.name}
+            {tokenMetadata?.name}
           </CardTitle>
         </div>
       </CardContent>
@@ -355,30 +365,28 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
         <div className="flex w-full items-end justify-between">
           {currentAddress === ownerOfData && (
             <>
-              <>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    placeholder="*Price"
-                    min={1}
-                    className="z-1 max-w-20 appearance-none"
-                    value={currentPrice}
-                    onChange={handleCurrentPriceChange}
-                  />
-                  <span className="text-sm text-muted-foreground">ETH</span>
-                </div>
-                <Button
-                  variant={'default'}
-                  className="z-1"
-                  onClick={
-                    marketItemData?.canceled
-                      ? handleRelistMarketItem
-                      : handleCreateMarketItem
-                  }
-                >
-                  {marketItemData?.canceled ? 'Relist' : 'Sell'}
-                </Button>
-              </>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  placeholder="Price"
+                  min={1}
+                  className="z-1 max-w-20 appearance-none"
+                  value={currentPrice}
+                  onChange={handleCurrentPriceChange}
+                />
+                <span className="text-sm text-muted-foreground">ETH</span>
+              </div>
+              <Button
+                variant={'default'}
+                className="z-1"
+                onClick={
+                  marketItemData?.canceled
+                    ? handleRelistMarketItem
+                    : handleCreateMarketItem
+                }
+              >
+                {marketItemData?.canceled ? 'Relist' : 'Sell'}
+              </Button>
             </>
           )}
           {ownerOfData === process.env.NEXT_PUBLIC_MARKET_ADDRESS && (

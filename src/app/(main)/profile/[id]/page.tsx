@@ -1,8 +1,9 @@
 import { OtherProfile } from '@/components/profile';
+import { Address } from 'viem';
 
 interface Props {
   params: Promise<{
-    id: `0x${string}`;
+    id: Address;
   }>;
 }
 

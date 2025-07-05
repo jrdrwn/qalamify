@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { useReadContract } from 'wagmi';
 
 import { Badge } from '../ui/badge';
@@ -48,48 +48,42 @@ export default function Header() {
     },
   });
 
-  const defaultMenus = [
-    {
-      title: (
-        <span className="flex items-center justify-center gap-1.5">
-          <Home className="text-primary" />
-          Home
-        </span>
-      ),
-      href: '/',
-    },
-    {
-      title: (
-        <span className="flex items-center justify-center gap-1.5">
-          <Search className="text-primary" />
-          Explore
-        </span>
-      ),
-      href: '/explore',
-    },
-    {
-      title: (
-        <span className="flex items-center justify-center gap-1.5">
-          <Plus className="text-primary" />
-          Create
-        </span>
-      ),
-      href: '/create',
-    },
-  ];
-  const [menus, setMenus] = useState(defaultMenus);
+  const defaultMenus = useMemo(
+    () => [
+      {
+        title: (
+          <span className="flex items-center justify-center gap-1.5">
+            <Home className="text-primary" />
+            Home
+          </span>
+        ),
+        href: '/',
+      },
+      {
+        title: (
+          <span className="flex items-center justify-center gap-1.5">
+            <Search className="text-primary" />
+            Explore
+          </span>
+        ),
+        href: '/explore',
+      },
+      {
+        title: (
+          <span className="flex items-center justify-center gap-1.5">
+            <Plus className="text-primary" />
+            Create
+          </span>
+        ),
+        href: '/create',
+      },
+    ],
+    [],
+  );
 
-  const pathname = usePathname();
-
-  const handleConnectWallet = () => {
-    openWalletModal({
-      view: isConnected ? 'Account' : 'Connect',
-    });
-  };
-
-  const checkUser = useCallback(async () => {
+  const menus = useMemo(() => {
     if (isConnected) {
-      setMenus([
+      return [
         ...defaultMenus,
         {
           title: (
@@ -103,16 +97,18 @@ export default function Header() {
           ),
           href: `/profile`,
         },
-      ]);
-      return;
+      ];
     }
-    setMenus(defaultMenus);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isConnected]);
+    return defaultMenus;
+  }, [isConnected, userProfileData, defaultMenus]);
 
-  useEffect(() => {
-    checkUser();
-  }, [checkUser]);
+  const pathname = usePathname();
+
+  const handleConnectWallet = () => {
+    openWalletModal({
+      view: isConnected ? 'Account' : 'Connect',
+    });
+  };
 
   return (
     <header className="w-full border-b border-border">
