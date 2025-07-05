@@ -12,7 +12,6 @@ import { useAppKitAccount } from '@reown/appkit/react';
 import { Clock, ExternalLink, Flag, Heart, Share2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { FileListItem } from 'pinata';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Address, formatEther } from 'viem';
@@ -40,6 +39,7 @@ const NFTDetail = ({ id }: { id: bigint }) => {
     args: [tokenId],
     account: currentAddress,
   });
+
   const { data: tokenCreatorData } = useReadContract({
     address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
     abi: NFT_ABI,
@@ -64,9 +64,14 @@ const NFTDetail = ({ id }: { id: bigint }) => {
   });
   const { writeContractAsync } = useWriteContract();
   const [favorite, setFavorite] = useState(false);
-  const [metadata, setMetadata] = useState<FileListItem | null>(null);
+  const { data: tokenMetadata } = useReadContract({
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+    abi: NFT_ABI,
+    functionName: 'getTokenMetadata',
+    args: [tokenId],
+  });
 
-  const { data: marketItemData } = useReadContract({
+  const { data: marketItemData, refetch: marketItemRefetch } = useReadContract({
     address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
     abi: MARKETPLACE_NFT,
     functionName: 'getMarketItemByTokenId',
@@ -74,35 +79,39 @@ const NFTDetail = ({ id }: { id: bigint }) => {
     account: currentAddress as Address,
   });
 
-  const { data: ownerOfData } = useReadContract({
+  const { data: ownerOfData, refetch: ownerOfRefetch } = useReadContract({
     address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
     abi: NFT_ABI,
     functionName: 'ownerOf',
     args: [tokenId],
     account: currentAddress,
   });
-  const { data: ownershipHistoryData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
-    abi: NFT_ABI,
-    functionName: 'getOwnershipHistory',
-    args: [tokenId],
-    account: currentAddress,
-  });
+  const { data: ownershipHistoryData, refetch: ownershipHistoryRefetch } =
+    useReadContract({
+      address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+      abi: NFT_ABI,
+      functionName: 'getOwnershipHistory',
+      args: [tokenId],
+      account: currentAddress,
+    });
 
-  const { data: userProfileOwnerOfData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
-    abi: NFT_ABI,
-    functionName: 'getUserProfile',
-    args: [ownerOfData as Address],
-    account: currentAddress,
-  });
-  const { data: userProfileSellerData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
-    abi: NFT_ABI,
-    functionName: 'getUserProfile',
-    args: [marketItemData?.seller as Address],
-    account: currentAddress,
-  });
+  const { data: userProfileOwnerOfData, refetch: userProfileOwnerOfRefetch } =
+    useReadContract({
+      address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+      abi: NFT_ABI,
+      functionName: 'getUserProfile',
+      args: [ownerOfData as Address],
+      account: currentAddress,
+    });
+
+  const { data: userProfileSellerData, refetch: userProfileSellerRefetch } =
+    useReadContract({
+      address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+      abi: NFT_ABI,
+      functionName: 'getUserProfile',
+      args: [marketItemData?.seller as Address],
+      account: currentAddress,
+    });
   const [currentPrice, setCurrentPrice] = useState<string>('');
 
   const handleCurrentPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -138,12 +147,27 @@ const NFTDetail = ({ id }: { id: bigint }) => {
         ],
         account: currentAddress,
       });
+      await marketItemRefetch();
+      await ownerOfRefetch();
+      await ownershipHistoryRefetch();
+      await userProfileOwnerOfRefetch();
+      await userProfileSellerRefetch();
       toast.success('NFT berhasil dijual!');
     } catch (error) {
       console.error('Error creating market item:', error);
       toast.error('Gagal menjual NFT. Silakan coba lagi.');
     }
-  }, [currentPrice, currentAddress, tokenId, writeContractAsync]);
+  }, [
+    currentPrice,
+    writeContractAsync,
+    tokenId,
+    currentAddress,
+    marketItemRefetch,
+    ownerOfRefetch,
+    ownershipHistoryRefetch,
+    userProfileOwnerOfRefetch,
+    userProfileSellerRefetch,
+  ]);
 
   const handleCancelMarketItem = useCallback(async () => {
     if (!marketItemData) {
@@ -160,12 +184,26 @@ const NFTDetail = ({ id }: { id: bigint }) => {
         ],
         account: currentAddress as Address,
       });
+      await marketItemRefetch();
+      await ownerOfRefetch();
+      await ownershipHistoryRefetch();
+      await userProfileOwnerOfRefetch();
+      await userProfileSellerRefetch();
       toast.success('NFT berhasil dibatalkan dari pasar!');
     } catch (error) {
       console.error('Error canceling market item:', error);
       toast.error('Gagal membatalkan NFT dari pasar. Silakan coba lagi.');
     }
-  }, [currentAddress, marketItemData, writeContractAsync]);
+  }, [
+    currentAddress,
+    marketItemData,
+    marketItemRefetch,
+    ownerOfRefetch,
+    ownershipHistoryRefetch,
+    userProfileOwnerOfRefetch,
+    userProfileSellerRefetch,
+    writeContractAsync,
+  ]);
 
   const handleCreateMarketSale = useCallback(async () => {
     if (!currentAddress) {
@@ -184,6 +222,11 @@ const NFTDetail = ({ id }: { id: bigint }) => {
         account: currentAddress,
         value: marketItemData?.price,
       });
+      await marketItemRefetch();
+      await ownerOfRefetch();
+      await ownershipHistoryRefetch();
+      await userProfileOwnerOfRefetch();
+      await userProfileSellerRefetch();
       toast.success('Pembelian NFT berhasil!');
     } catch (error) {
       console.error('Error creating market sale:', error);
@@ -193,8 +236,14 @@ const NFTDetail = ({ id }: { id: bigint }) => {
     currentAddress,
     marketItemData?.marketItemId,
     marketItemData?.price,
+    marketItemRefetch,
+    ownerOfRefetch,
+    ownershipHistoryRefetch,
+    userProfileOwnerOfRefetch,
+    userProfileSellerRefetch,
     writeContractAsync,
   ]);
+
   const handleRelistMarketItem = useCallback(async () => {
     if (
       !currentPrice ||
@@ -224,12 +273,27 @@ const NFTDetail = ({ id }: { id: bigint }) => {
           priceInWei,
         ],
       });
+      await marketItemRefetch();
+      await ownerOfRefetch();
+      await ownershipHistoryRefetch();
+      await userProfileOwnerOfRefetch();
+      await userProfileSellerRefetch();
       toast.success('NFT berhasil direlist!');
     } catch (error) {
       console.error('Error relisting market item:', error);
       toast.error('Gagal mere-list NFT. Silakan coba lagi.');
     }
-  }, [currentPrice, marketItemData?.marketItemId, tokenId, writeContractAsync]);
+  }, [
+    currentPrice,
+    marketItemData?.marketItemId,
+    marketItemRefetch,
+    ownerOfRefetch,
+    ownershipHistoryRefetch,
+    tokenId,
+    userProfileOwnerOfRefetch,
+    userProfileSellerRefetch,
+    writeContractAsync,
+  ]);
 
   const handleFavoriteToggle = useCallback(async () => {
     if (!currentAddress) {
@@ -253,25 +317,7 @@ const NFTDetail = ({ id }: { id: bigint }) => {
         `Gagal ${favorite ? 'menghapus' : 'menambahkan'} NFT ke daftar favorit. Silakan coba lagi.`,
       );
     }
-  }, [favorite, tokenId, writeContractAsync]);
-
-  const getMetadata = useCallback(async () => {
-    if (!tokenURIData) return;
-
-    const res = await fetch(`/api/metadata/${tokenURIData}`, {
-      cache: 'force-cache',
-    });
-    if (!res.ok) {
-      toast.error('Gagal mengambil metadata NFT');
-      return;
-    }
-    const json = await res.json();
-    setMetadata(json);
-  }, [tokenURIData]);
-
-  useEffect(() => {
-    getMetadata();
-  }, [getMetadata]);
+  }, [currentAddress, favorite, tokenId, writeContractAsync]);
 
   useEffect(() => {
     if (isFavoriteData !== undefined) {
@@ -284,7 +330,7 @@ const NFTDetail = ({ id }: { id: bigint }) => {
     }
   }, [marketItemData]);
 
-  if (!metadata) {
+  if (!tokenMetadata) {
     return <>Loading</>;
   }
 
@@ -341,8 +387,8 @@ const NFTDetail = ({ id }: { id: bigint }) => {
             {/* NFT Image */}
             <Card className="col-span-1 row-span-2 p-0">
               <Image
-                src={`${process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL}/ipfs/${metadata?.cid}`}
-                alt={metadata.keyvalues.name}
+                src={`${process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL}/ipfs/${tokenURIData}`}
+                alt={tokenMetadata.name}
                 className="aspect-[16/10] rounded-xl object-cover"
                 width={1024}
                 height={1024}
@@ -356,10 +402,10 @@ const NFTDetail = ({ id }: { id: bigint }) => {
                 <div className="flex items-start justify-between">
                   <div>
                     <Badge variant="secondary" className="mb-2">
-                      {metadata.keyvalues.category}
+                      {tokenMetadata.category}
                     </Badge>
                     <CardTitle className="mb-2 text-3xl">
-                      {metadata.keyvalues.name}
+                      {tokenMetadata.name}
                     </CardTitle>
                   </div>
                   <div className="flex items-center gap-2">
@@ -381,7 +427,7 @@ const NFTDetail = ({ id }: { id: bigint }) => {
                   </div>
                 </div>
                 <p className="leading-relaxed text-muted-foreground">
-                  {metadata.keyvalues.description}
+                  {tokenMetadata.description}
                 </p>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -389,7 +435,12 @@ const NFTDetail = ({ id }: { id: bigint }) => {
                 <div className="flex items-center gap-6 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Clock className="h-4 w-4" />
-                    Created at {formatDate(metadata.created_at)}
+                    Minting at{' '}
+                    {formatDate(
+                      new Date(
+                        parseInt(tokenMetadata.mintingAt.toString()) * 1000,
+                      ),
+                    )}
                   </div>
                 </div>
 
@@ -699,7 +750,7 @@ const NFTDetail = ({ id }: { id: bigint }) => {
         open={showBuyDialog}
         onOpenChange={setShowBuyDialog}
         title="Confirm Purchase"
-        description={`Are you sure you want to buy "${metadata.keyvalues.name}" for ${marketItemData?.price} ETH? This transaction cannot be undone.`}
+        description={`Are you sure you want to buy "${tokenMetadata.name}" for ${marketItemData?.price} ETH? This transaction cannot be undone.`}
         onConfirm={handleBuy}
         confirmText="Buy Now"
         cancelText="Cancel"
@@ -709,7 +760,7 @@ const NFTDetail = ({ id }: { id: bigint }) => {
         open={showCancelDialog}
         onOpenChange={setShowCancelDialog}
         title="Cancel Listing"
-        description={`Are you sure you want to cancel the listing for "${metadata.keyvalues.name}"? It will no longer be available for purchase.`}
+        description={`Are you sure you want to cancel the listing for "${tokenMetadata.name}"? It will no longer be available for purchase.`}
         onConfirm={handleCancel}
         confirmText="Cancel Listing"
         cancelText="Keep Listed"
