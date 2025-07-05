@@ -12,7 +12,7 @@ import { z } from 'zod';
 
 import { INFT } from '../explore/card-nft';
 import { Skeleton } from '../ui/skeleton';
-import CardNFTViewed from './card-nft';
+import CardNFTProfile from './card-nft';
 import EditProfileForm, { editProfileFormSchema } from './edit-form';
 
 interface ProfileProps {
@@ -230,7 +230,10 @@ const Profile = ({
                     </p>
                   )}
                   {tokensOwnedByMeData?.map((tokenId) => (
-                    <CardNFTViewed key={tokenId.toString()} tokenId={tokenId} />
+                    <CardNFTProfile
+                      key={tokenId.toString()}
+                      tokenId={tokenId}
+                    />
                   ))}
                 </div>
               </TabsContent>
@@ -243,7 +246,10 @@ const Profile = ({
                     </p>
                   )}
                   {tokensCreatedByMeData?.map((tokenId) => (
-                    <CardNFTViewed key={tokenId.toString()} tokenId={tokenId} />
+                    <CardNFTProfile
+                      key={tokenId.toString()}
+                      tokenId={tokenId}
+                    />
                   ))}
                 </div>
               </TabsContent>
@@ -256,7 +262,10 @@ const Profile = ({
                     </p>
                   )}
                   {favoritesData?.map((tokenId) => (
-                    <CardNFTViewed key={tokenId.toString()} tokenId={tokenId} />
+                    <CardNFTProfile
+                      key={tokenId.toString()}
+                      tokenId={tokenId}
+                    />
                   ))}
                 </div>
               </TabsContent>
@@ -269,7 +278,7 @@ const Profile = ({
                     </p>
                   )}
                   {fetchItemsBySellerData?.map((nft) => (
-                    <CardNFTViewed key={nft.tokenId} tokenId={nft.tokenId} />
+                    <CardNFTProfile key={nft.tokenId} tokenId={nft.tokenId} />
                   ))}
                 </div>
               </TabsContent>

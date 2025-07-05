@@ -6,7 +6,7 @@ import { Heart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Address, formatEther } from 'viem';
 import { useReadContract, useWriteContract } from 'wagmi';
@@ -60,12 +60,16 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
     args: [tokenId],
     account: currentAddress,
   });
+  // Only fetch userProfileData if tokenCreatorData is available
   const { data: userProfileData } = useReadContract({
     address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
     abi: NFT_ABI,
     functionName: 'getUserProfile',
     args: [tokenCreatorData as Address],
     account: currentAddress,
+    query: {
+      enabled: !!tokenCreatorData,
+    },
   });
   const { data: isFavoriteData } = useReadContract({
     address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
@@ -100,6 +104,11 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
       functionName: 'getTokenMetadata',
       args: [tokenId],
     });
+
+  // Memoize formatted price
+  const formattedMarketPrice = useMemo(() => {
+    return marketItemData?.price ? formatEther(marketItemData.price) : '';
+  }, [marketItemData?.price]);
 
   const [currentPrice, setCurrentPrice] = useState<string>('');
 
@@ -303,16 +312,13 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
     }
   }, [currentAddress, favorite, router, tokenId, writeContractAsync]);
 
+  // Gabungkan efek setFavorite dan setCurrentPrice
   useEffect(() => {
-    if (isFavoriteData !== undefined) {
-      setFavorite(isFavoriteData);
-    }
-  }, [isFavoriteData]);
-  useEffect(() => {
-    if (marketItemData?.price) {
+    if (isFavoriteData !== undefined) setFavorite(isFavoriteData);
+    if (marketItemData?.price)
       setCurrentPrice(formatEther(marketItemData.price));
-    }
-  }, [marketItemData]);
+  }, [isFavoriteData, marketItemData]);
+
   if (tokenMetadata === null) {
     return (
       <Card className="relative col-span-1 gap-2 pt-42 pb-4">
@@ -330,7 +336,7 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
   return (
     <Card className="relative col-span-1 gap-2 pt-42 pb-4">
       <Image
-        src={`${process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL}/ipfs/${tokenURIData}`}
+        src={`${process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL}/ipfs/${tokenURIData ?? ''}`}
         alt={tokenMetadata?.name || 'NFT Image'}
         width={800}
         height={800}
@@ -348,11 +354,11 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
         <div className="flex items-center gap-3">
           <Avatar className="size-5">
             <AvatarImage
-              src={userProfileData?.avatarURL}
+              src={userProfileData?.avatarURL ?? ''}
               className="object-cover object-center"
             />
             <AvatarFallback>
-              {userProfileData?.username[0] ||
+              {userProfileData?.username?.[0] ||
                 (currentAddress && currentAddress[0])}
             </AvatarFallback>
           </Avatar>
@@ -392,8 +398,7 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
           {ownerOfData === process.env.NEXT_PUBLIC_MARKET_ADDRESS && (
             <>
               <Button variant={'outline'} className="z-1">
-                {marketItemData?.price && formatEther(marketItemData?.price)}{' '}
-                ETH
+                {formattedMarketPrice} ETH
               </Button>
               {marketItemData?.seller === currentAddress ? (
                 <Button

@@ -62,6 +62,7 @@ export default function CardNFT({
   availableMarketItemsRefetch?: () => void;
 }) {
   const searchParams = useSearchParams();
+  // Optimized: Only fetch tokenURI and metadata in parallel, fetch userProfile only if needed
   const { data: tokenURIData } = useReadContract({
     address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
     abi: NFT_ABI,
@@ -69,12 +70,20 @@ export default function CardNFT({
     args: [nft.tokenId],
     account: nft.creator as Address,
   });
+  const { data: tokenMetadata } = useReadContract({
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+    abi: NFT_ABI,
+    functionName: 'getTokenMetadata',
+    args: [nft.tokenId],
+  });
+  // Only fetch creator and user profile if needed for avatar
   const { data: tokenCreatorData } = useReadContract({
     address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
     abi: NFT_ABI,
     functionName: 'getTokenCreatorById',
     args: [nft.tokenId],
     account: nft.creator as Address,
+    query: { enabled: !!nft.tokenId }, // Only fetch if tokenId exists
   });
   const { data: userProfileData } = useReadContract({
     address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
@@ -82,8 +91,8 @@ export default function CardNFT({
     functionName: 'getUserProfile',
     args: [tokenCreatorData as Address],
     account: nft.creator as Address,
+    query: { enabled: !!tokenCreatorData }, // Only fetch if creator data exists
   });
-
   const { data: isFavoriteData } = useReadContract({
     address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
     abi: NFT_ABI,
@@ -93,12 +102,7 @@ export default function CardNFT({
   });
   const { writeContractAsync } = useWriteContract();
   const [favorite, setFavorite] = useState(false);
-  const { data: tokenMetadata } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
-    abi: NFT_ABI,
-    functionName: 'getTokenMetadata',
-    args: [nft.tokenId],
-  });
+
   const handleCancelMarketItem = useCallback(async () => {
     try {
       const tx = await writeContractAsync({
@@ -160,7 +164,6 @@ export default function CardNFT({
     nft.price,
     writeContractAsync,
   ]);
-
   const handleFavoriteToggle = useCallback(async () => {
     if (currentAccount === process.env.NEXT_PUBLIC_MARKET_ADDRESS) {
       toast.warning('Please connect to a wallet');
@@ -187,11 +190,26 @@ export default function CardNFT({
     }
   }, [currentAccount, favorite, nft.tokenId, writeContractAsync]);
 
+  // Only update favorite state if data changes
   useEffect(() => {
-    if (isFavoriteData !== undefined) {
+    if (typeof isFavoriteData === 'boolean') {
       setFavorite(isFavoriteData);
     }
   }, [isFavoriteData]);
+
+  // Early return if metadata not loaded
+  if (!tokenMetadata) {
+    return <CardNFTSkeleton />;
+  }
+
+  // Early return if search query doesn't match
+  const searchQuery = searchParams.get('q') || '';
+  if (
+    searchQuery &&
+    !tokenMetadata?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  ) {
+    return null;
+  }
 
   if (tokenMetadata === null) {
     return <CardNFTSkeleton />;
