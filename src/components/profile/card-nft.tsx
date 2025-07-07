@@ -2,7 +2,7 @@ import { MARKETPLACE_NFT } from '@/app/abis/marketplace';
 import { NFT_ABI } from '@/app/abis/nft';
 import { formatAddress } from '@/lib/utils';
 import { useAppKitAccount } from '@reown/appkit/react';
-import { Heart } from 'lucide-react';
+import { CircleUserRound } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -13,7 +13,7 @@ import { useReadContract, useWriteContract } from 'wagmi';
 
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
-import { Card, CardContent, CardFooter, CardTitle } from '../ui/card';
+import { Card, CardContent, CardFooter } from '../ui/card';
 import { Input } from '../ui/input';
 import { Skeleton } from '../ui/skeleton';
 
@@ -71,15 +71,8 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
       enabled: !!tokenCreatorData,
     },
   });
-  const { data: isFavoriteData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
-    abi: NFT_ABI,
-    functionName: 'isFavorite',
-    args: [tokenId],
-    account: currentAddress,
-  });
+
   const { writeContractAsync } = useWriteContract();
-  const [favorite, setFavorite] = useState(false);
 
   const { data: marketItemData, refetch: marketItemRefetch } = useReadContract({
     address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
@@ -286,38 +279,11 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
     writeContractAsync,
   ]);
 
-  const handleFavoriteToggle = useCallback(async () => {
-    if (!currentAddress) {
-      toast.warning('Please connect to a wallet');
-      return;
-    }
-    try {
-      await writeContractAsync({
-        address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
-        abi: NFT_ABI,
-        functionName: favorite ? 'removeFavorite' : 'addFavorite',
-        args: [tokenId],
-      });
-      setFavorite(!favorite);
-
-      toast.success(
-        `NFT telah ${favorite ? 'dihapus dari' : 'ditambahkan ke'} daftar favorit Anda!`,
-      );
-      router.refresh();
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-      toast.error(
-        `Gagal ${favorite ? 'menghapus' : 'menambahkan'} NFT ke daftar favorit. Silakan coba lagi.`,
-      );
-    }
-  }, [currentAddress, favorite, router, tokenId, writeContractAsync]);
-
   // Gabungkan efek setFavorite dan setCurrentPrice
   useEffect(() => {
-    if (isFavoriteData !== undefined) setFavorite(isFavoriteData);
     if (marketItemData?.price)
       setCurrentPrice(formatEther(marketItemData.price));
-  }, [isFavoriteData, marketItemData]);
+  }, [marketItemData]);
 
   if (tokenMetadata === null) {
     return (
@@ -334,40 +300,35 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
     );
   }
   return (
-    <Card className="relative col-span-1 gap-2 pt-42 pb-4">
-      <Image
-        src={`${process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL}/ipfs/${tokenURIData ?? ''}`}
-        alt={tokenMetadata?.name || 'NFT Image'}
-        width={800}
-        height={800}
-        className="absolute -top-8 left-1/2 h-46 w-[calc(100%-1rem)] -translate-x-1/2 rounded-lg bg-muted-foreground object-cover object-center"
-      />
-      <Button
-        size={'icon'}
-        variant={favorite ? 'default' : 'secondary'}
-        className="absolute -top-6 right-4 z-1"
-        onClick={handleFavoriteToggle}
-      >
-        <Heart />
-      </Button>
-      <CardContent className="mb-4 px-4">
+    <Card className="relative col-span-1 gap-2 pt-2 pb-2">
+      <CardContent className="mb-2 px-2">
+        <Image
+          src={`${process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL}/ipfs/${tokenURIData ?? ''}`}
+          alt={tokenMetadata?.name || 'NFT Image'}
+          width={800}
+          height={800}
+          className="mb-4 h-46 rounded-lg bg-muted-foreground object-cover object-center"
+        />
         <div className="flex items-center gap-3">
-          <Avatar className="size-5">
-            <AvatarImage
-              src={userProfileData?.avatarURL ?? ''}
-              className="object-cover object-center"
-            />
-            <AvatarFallback>
-              {userProfileData?.username?.[0] ||
-                (currentAddress && currentAddress[0])}
-            </AvatarFallback>
+          <Avatar className="size-5 bg-muted">
+            {userProfileData?.avatarURL ? (
+              <>
+                <AvatarImage
+                  src={userProfileData?.avatarURL}
+                  className="object-cover object-center"
+                />
+                <AvatarFallback>
+                  {userProfileData?.username[0] || 'Q'}
+                </AvatarFallback>
+              </>
+            ) : (
+              <CircleUserRound className="size-5 text-muted-foreground" />
+            )}
           </Avatar>
-          <CardTitle className="line-clamp-1 leading-normal text-ellipsis">
-            {tokenMetadata?.name}
-          </CardTitle>
+          <p className="line-clamp-1 text-ellipsis">{tokenMetadata?.name}</p>
         </div>
       </CardContent>
-      <CardFooter className="flex flex-col items-stretch gap-2 px-4">
+      <CardFooter className="flex flex-col items-stretch gap-2 px-2">
         <div className="flex w-full items-end justify-between">
           {currentAddress === ownerOfData && (
             <>

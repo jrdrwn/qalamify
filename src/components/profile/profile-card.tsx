@@ -200,7 +200,7 @@ const Profile = ({
       {/* Tabs Section */}
       <div className="container mx-auto mt-8 px-2">
         <Tabs defaultValue="owned">
-          <Card className="gap-14">
+          <Card>
             <CardHeader>
               <TabsList className="w-full">
                 <TabsTrigger value="owned">

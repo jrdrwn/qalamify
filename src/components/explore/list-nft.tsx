@@ -48,7 +48,7 @@ export default function ListNFT() {
   const nfts = availableMarketItems || [];
 
   return (
-    <section className="container mx-auto px-2 py-16 lg:px-0">
+    <section className="container mx-auto px-2 pt-4 pb-10 lg:px-0">
       <div className="grid grid-cols-1 gap-x-8 gap-y-16 px-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {isLoadingAvailableMarketItems && renderSkeletons(6)}
         {!isLoadingAvailableMarketItems &&

@@ -2,18 +2,18 @@
 
 import { MARKETPLACE_NFT } from '@/app/abis/marketplace';
 import { NFT_ABI } from '@/app/abis/nft';
-import { Heart } from 'lucide-react';
+import { CircleUserRound } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { Address, formatEther } from 'viem';
 import { useReadContract, useWriteContract } from 'wagmi';
 
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
-import { Card, CardContent, CardFooter, CardTitle } from '../ui/card';
+import { Card, CardContent, CardFooter } from '../ui/card';
 import { Skeleton } from '../ui/skeleton';
 
 export interface INFT {
@@ -93,15 +93,8 @@ export default function CardNFT({
     account: nft.creator as Address,
     query: { enabled: !!tokenCreatorData }, // Only fetch if creator data exists
   });
-  const { data: isFavoriteData } = useReadContract({
-    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
-    abi: NFT_ABI,
-    functionName: 'isFavorite',
-    args: [nft.tokenId],
-    account: currentAccount as Address,
-  });
+
   const { writeContractAsync } = useWriteContract();
-  const [favorite, setFavorite] = useState(false);
 
   const handleCancelMarketItem = useCallback(async () => {
     try {
@@ -164,38 +157,6 @@ export default function CardNFT({
     nft.price,
     writeContractAsync,
   ]);
-  const handleFavoriteToggle = useCallback(async () => {
-    if (currentAccount === process.env.NEXT_PUBLIC_MARKET_ADDRESS) {
-      toast.warning('Please connect to a wallet');
-      return;
-    }
-    try {
-      const tx = await writeContractAsync({
-        address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
-        abi: NFT_ABI,
-        functionName: favorite ? 'removeFavorite' : 'addFavorite',
-        args: [nft.tokenId],
-      });
-      setFavorite(!favorite);
-      toast.success(
-        `NFT telah ${favorite ? 'dihapus dari' : 'ditambahkan ke'} daftar favorit Anda!`,
-      );
-
-      console.log('Transaction sent:', tx);
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-      toast.error(
-        `Gagal ${favorite ? 'menghapus' : 'menambahkan'} NFT ke daftar favorit. Silakan coba lagi.`,
-      );
-    }
-  }, [currentAccount, favorite, nft.tokenId, writeContractAsync]);
-
-  // Only update favorite state if data changes
-  useEffect(() => {
-    if (typeof isFavoriteData === 'boolean') {
-      setFavorite(isFavoriteData);
-    }
-  }, [isFavoriteData]);
 
   // Early return if metadata not loaded
   if (!tokenMetadata) {
@@ -220,39 +181,33 @@ export default function CardNFT({
   }
 
   return (
-    <Card className="relative col-span-1 gap-2 pt-42 pb-4">
-      <Image
-        src={`${process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL}/ipfs/${tokenURIData}`}
-        alt={tokenMetadata?.name || 'NFT Image'}
-        width={800}
-        height={800}
-        className="absolute -top-8 left-1/2 h-46 w-[calc(100%-1rem)] -translate-x-1/2 rounded-lg bg-muted-foreground object-cover object-center"
-      />
-      <Button
-        size={'icon'}
-        variant={favorite ? 'default' : 'secondary'}
-        className="absolute -top-6 right-4 z-1"
-        onClick={handleFavoriteToggle}
-      >
-        <Heart />
-      </Button>
-      <CardContent className="mb-4 px-4">
+    <Card className="relative col-span-1 gap-2 pt-2 pb-2">
+      <CardContent className="mb-2 px-2">
+        <Image
+          src={`${process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL}/ipfs/${tokenURIData}`}
+          alt={tokenMetadata?.name || 'NFT Image'}
+          width={800}
+          height={800}
+          className="mb-4 h-46 rounded-lg bg-muted-foreground object-cover object-center"
+        />
         <div className="flex items-center gap-3">
-          <Avatar className="size-5">
-            <AvatarImage
-              src={userProfileData?.avatarURL}
-              className="object-cover object-center"
-            />
-            <AvatarFallback>
-              {userProfileData?.username[0] || nft.creator[0]}
-            </AvatarFallback>
-          </Avatar>
-          <CardTitle className="line-clamp-1 leading-normal text-ellipsis">
-            {tokenMetadata.name}
-          </CardTitle>
+          {userProfileData?.avatarURL ? (
+            <>
+              <AvatarImage
+                src={userProfileData?.avatarURL}
+                className="object-cover object-center"
+              />
+              <AvatarFallback>
+                {userProfileData?.username[0] || 'Q'}
+              </AvatarFallback>
+            </>
+          ) : (
+            <CircleUserRound className="size-5 text-muted-foreground" />
+          )}
+          <p className="line-clamp-1 text-ellipsis">{tokenMetadata.name}</p>
         </div>
       </CardContent>
-      <CardFooter className="flex flex-col items-stretch gap-2 px-4">
+      <CardFooter className="flex flex-col items-stretch gap-2 px-2">
         <div className="flex w-full items-end justify-between">
           {nft && !nft?.canceled && !nft?.sold && (
             <>
