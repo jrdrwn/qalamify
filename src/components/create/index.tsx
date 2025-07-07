@@ -45,7 +45,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { useCreateNFT } from './use-create-nft';
 
-const calligraphyStyles = [
+export const calligraphyStyles = [
   {
     id: 1,
     label: 'Naskh',
@@ -81,7 +81,7 @@ const calligraphyStyles = [
   },
 ];
 
-const presentationStyles = [
+export const presentationStyles = [
   {
     id: 1,
     label: 'Traditional',
@@ -103,7 +103,7 @@ const presentationStyles = [
   },
 ];
 
-const compositions = [
+export const compositions = [
   {
     id: 1,
     label: 'Sprial',
@@ -125,7 +125,7 @@ const compositions = [
   },
 ];
 
-const decorations = [
+export const decorations = [
   {
     id: 1,
     label: 'Floral',

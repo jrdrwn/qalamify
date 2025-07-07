@@ -48,8 +48,8 @@ export default function Hero() {
           <p className="text-sm xl:text-base">
             A New Collection of Calligraphy Awaits!
           </p>
-          <span className="rounded-full bg-neutral-500 p-1">
-            <ArrowRight className="size-4 text-neutral-50 md:size-5 xl:size-6" />
+          <span className="rounded-full bg-primary p-1">
+            <ArrowRight className="size-4 text-primary-foreground md:size-5 xl:size-6" />
           </span>
         </div>
         <h1 className="mt-4 mb-4 max-w-3xl bg-gradient-to-br from-primary to-secondary bg-clip-text text-4xl leading-tight font-bold text-transparent md:text-5xl lg:mb-6 lg:text-4xl xl:mb-8 xl:text-6xl xl:tracking-wide">

@@ -17,6 +17,12 @@ import { toast } from 'sonner';
 import { Address, formatEther } from 'viem';
 import { useReadContract, useWriteContract } from 'wagmi';
 
+import {
+  calligraphyStyles,
+  compositions,
+  decorations,
+  presentationStyles,
+} from '../create';
 import ConfirmDialog from '../shared/confrm-dialog';
 import { Input } from '../ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -382,7 +388,7 @@ const NFTDetail = ({ id }: { id: bigint }) => {
 
   return (
     <div>
-      <div className="px-4 pt-4 pb-16">
+      <div className="px-4 py-4">
         <div className="mx-auto">
           <div className="grid grid-rows-3 gap-2 lg:grid-cols-2">
             {/* NFT Image */}
@@ -403,7 +409,12 @@ const NFTDetail = ({ id }: { id: bigint }) => {
                 <div className="flex items-start justify-between">
                   <div>
                     <Badge variant="secondary" className="mb-2">
-                      {tokenMetadata.category}
+                      {
+                        calligraphyStyles.find(
+                          (cs) =>
+                            BigInt(cs.id) === tokenMetadata.calligraphyStyle,
+                        )?.label
+                      }
                     </Badge>
                     <CardTitle className="mb-2 text-3xl">
                       {tokenMetadata.name}
@@ -427,7 +438,7 @@ const NFTDetail = ({ id }: { id: bigint }) => {
                     </Button>
                   </div>
                 </div>
-                <p className="leading-relaxed text-muted-foreground">
+                <p className="line-clamp-4 leading-relaxed text-muted-foreground">
                   {tokenMetadata.description}
                 </p>
               </CardHeader>
@@ -533,12 +544,12 @@ const NFTDetail = ({ id }: { id: bigint }) => {
 
             {/* Details */}
             <Card className="col-span-1 row-span-1">
-              <Tabs defaultValue="details">
+              <Tabs defaultValue="attributes">
                 <CardHeader>
                   <TabsList>
                     <CardTitle>
+                      <TabsTrigger value="attributes">Attributes</TabsTrigger>
                       <TabsTrigger value="details">Details</TabsTrigger>
-                      {/* <TabsTrigger value="attributes">Attributes</TabsTrigger> */}
                       <TabsTrigger value="history">History</TabsTrigger>
                     </CardTitle>
                   </TabsList>
@@ -573,19 +584,51 @@ const NFTDetail = ({ id }: { id: bigint }) => {
                 <TabsContent value="attributes">
                   <CardContent className="space-y-2">
                     <div className="grid grid-cols-2 gap-2">
-                      {/* {nft.attributes.map((attr, index) => (
-                        <div
-                          key={index}
-                          className="rounded-lg bg-gray-50 p-1 text-center"
-                        >
-                          <div className="text-sm font-medium text-muted-foreground">
-                            {attr.trait_type}
-                          </div>
-                          <div className="text-lg font-bold text-gray-900">
-                            {attr.value}
-                          </div>
+                      <div className="rounded-lg bg-muted p-1 text-center">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Presentation Style
                         </div>
-                      ))} */}
+                        <div className="text-lg font-bold text-muted-foreground">
+                          {presentationStyles.find(
+                            (ps) =>
+                              BigInt(ps.id) === tokenMetadata.presentationStyle,
+                          )?.label || 'Unknown'}
+                        </div>
+                      </div>
+                      <div className="rounded-lg bg-muted p-1 text-center">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Decoration
+                        </div>
+                        <div className="text-lg font-bold text-muted-foreground">
+                          {decorations.find(
+                            (dc) => BigInt(dc.id) === tokenMetadata.decoration,
+                          )?.label || 'Unknown'}
+                        </div>
+                      </div>
+                      <div className="rounded-lg bg-muted p-1 text-center">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Composition
+                        </div>
+                        <div className="text-lg font-bold text-muted-foreground">
+                          {compositions.find(
+                            (cp) => BigInt(cp.id) === tokenMetadata.composition,
+                          )?.label || 'Unknown'}
+                        </div>
+                      </div>
+                      <div className="rounded-lg bg-muted p-1 text-center">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Dominant Color
+                        </div>
+                        <div className="flex items-center justify-center gap-2 text-lg font-bold text-muted-foreground">
+                          <div
+                            style={{
+                              backgroundColor: tokenMetadata.dominantColor,
+                            }}
+                            className="size-5 rounded-full"
+                          ></div>
+                          {tokenMetadata.dominantColor || 'Unknown'}
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </TabsContent>
