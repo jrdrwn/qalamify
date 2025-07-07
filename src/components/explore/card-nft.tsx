@@ -2,11 +2,11 @@
 
 import { MARKETPLACE_NFT } from '@/app/abis/marketplace';
 import { NFT_ABI } from '@/app/abis/nft';
-import { CircleUserRound } from 'lucide-react';
+import { CircleUserRound, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { Address, formatEther } from 'viem';
 import { useReadContract, useWriteContract } from 'wagmi';
@@ -94,9 +94,19 @@ export default function CardNFT({
     query: { enabled: !!tokenCreatorData }, // Only fetch if creator data exists
   });
 
+  const [createMarketSaleLoading, setCreateMarketSaleLoading] = useState(false);
+  const [cancelMarketItemLoading, setCancelMarketItemLoading] = useState(false);
+
   const { writeContractAsync } = useWriteContract();
 
   const handleCancelMarketItem = useCallback(async () => {
+    if (cancelMarketItemLoading) return; // Prevent multiple clicks
+    setCancelMarketItemLoading(true);
+    if (currentAccount === process.env.NEXT_PUBLIC_MARKET_ADDRESS) {
+      toast.warning('Please connect to a wallet');
+      setCancelMarketItemLoading(false);
+      return;
+    }
     try {
       const tx = await writeContractAsync({
         address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
@@ -116,17 +126,23 @@ export default function CardNFT({
     } catch (error) {
       console.error('Error canceling market item:', error);
       toast.error('Gagal membatalkan NFT dari pasar. Silakan coba lagi.');
+    } finally {
+      setCancelMarketItemLoading(false);
     }
   }, [
     availableMarketItemsRefetch,
+    cancelMarketItemLoading,
     currentAccount,
     nft.marketItemId,
     writeContractAsync,
   ]);
 
   const handleCreateMarketSale = useCallback(async () => {
+    if (createMarketSaleLoading) return; // Prevent multiple clicks
+    setCreateMarketSaleLoading(true);
     if (currentAccount === process.env.NEXT_PUBLIC_MARKET_ADDRESS) {
       toast.warning('Please connect to a wallet');
+      setCreateMarketSaleLoading(false);
       return;
     }
     try {
@@ -149,9 +165,12 @@ export default function CardNFT({
     } catch (error) {
       console.error('Error creating market sale:', error);
       toast.error('Gagal membeli NFT. Silakan coba lagi.');
+    } finally {
+      setCreateMarketSaleLoading(false);
     }
   }, [
     availableMarketItemsRefetch,
+    createMarketSaleLoading,
     currentAccount,
     nft.marketItemId,
     nft.price,
@@ -219,7 +238,11 @@ export default function CardNFT({
                   variant={'default'}
                   className="z-1"
                   onClick={handleCancelMarketItem}
+                  disabled={cancelMarketItemLoading}
                 >
+                  {cancelMarketItemLoading && (
+                    <Loader2 className="animate-spin"></Loader2>
+                  )}
                   Cancel
                 </Button>
               ) : (
@@ -227,7 +250,11 @@ export default function CardNFT({
                   variant={'default'}
                   className="z-1"
                   onClick={handleCreateMarketSale}
+                  disabled={createMarketSaleLoading}
                 >
+                  {createMarketSaleLoading && (
+                    <Loader2 className="animate-spin"></Loader2>
+                  )}
                   Buy
                 </Button>
               )}

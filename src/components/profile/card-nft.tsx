@@ -2,7 +2,7 @@ import { MARKETPLACE_NFT } from '@/app/abis/marketplace';
 import { NFT_ABI } from '@/app/abis/nft';
 import { formatAddress } from '@/lib/utils';
 import { useAppKitAccount } from '@reown/appkit/react';
-import { CircleUserRound } from 'lucide-react';
+import { CircleUserRound, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -105,17 +105,26 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
 
   const [currentPrice, setCurrentPrice] = useState<string>('');
 
+  const [createMarketSaleLoading, setCreateMarketSaleLoading] = useState(false);
+  const [cancelMarketItemLoading, setCancelMarketItemLoading] = useState(false);
+  const [createMarketItemOrRelistLoading, setCreateMarketItemOrRelistLoading] =
+    useState(false);
+
   const handleCurrentPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCurrentPrice(e.target.value);
   };
 
   const handleCreateMarketItem = useCallback(async () => {
+    if (createMarketItemOrRelistLoading) return; // Prevent multiple clicks
+    setCreateMarketItemOrRelistLoading(true);
     if (
       !currentPrice ||
       isNaN(Number(currentPrice)) ||
       Number(currentPrice) <= 0
     ) {
       toast.error('Harga tidak valid. Harap masukkan harga yang benar.');
+      setCreateMarketItemOrRelistLoading(false);
+
       return;
     }
     try {
@@ -147,8 +156,11 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
     } catch (error) {
       console.error('Error creating market item:', error);
       toast.error('Gagal menjual NFT. Silakan coba lagi.');
+    } finally {
+      setCreateMarketItemOrRelistLoading(false);
     }
   }, [
+    createMarketItemOrRelistLoading,
     currentPrice,
     writeContractAsync,
     tokenId,
@@ -160,7 +172,11 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
   ]);
 
   const handleCancelMarketItem = useCallback(async () => {
+    if (cancelMarketItemLoading) return; // Prevent multiple clicks
+    setCancelMarketItemLoading(true);
     if (!marketItemData) {
+      toast.error('Tidak ada item pasar yang ditemukan untuk NFT ini.');
+      setCancelMarketItemLoading(false);
       return;
     }
     try {
@@ -182,8 +198,11 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
     } catch (error) {
       console.error('Error canceling market item:', error);
       toast.error('Gagal membatalkan NFT dari pasar. Silakan coba lagi.');
+    } finally {
+      setCancelMarketItemLoading(false);
     }
   }, [
+    cancelMarketItemLoading,
     currentAddress,
     marketItemData,
     marketItemRefetch,
@@ -194,8 +213,11 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
   ]);
 
   const handleCreateMarketSale = useCallback(async () => {
+    if (createMarketSaleLoading) return; // Prevent multiple clicks
+    setCreateMarketSaleLoading(true);
     if (!currentAddress) {
       toast.warning('Please connect to a wallet');
+      setCreateMarketSaleLoading(false);
       return;
     }
     try {
@@ -218,8 +240,11 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
     } catch (error) {
       console.error('Error creating market sale:', error);
       toast.error('Gagal membeli NFT. Silakan coba lagi.');
+    } finally {
+      setCreateMarketSaleLoading(false);
     }
   }, [
+    createMarketSaleLoading,
     currentAddress,
     marketItemData?.marketItemId,
     marketItemData?.price,
@@ -231,6 +256,8 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
   ]);
 
   const handleRelistMarketItem = useCallback(async () => {
+    if (createMarketItemOrRelistLoading) return; // Prevent multiple clicks
+    setCreateMarketItemOrRelistLoading(true);
     if (
       !currentPrice ||
       isNaN(Number(currentPrice)) ||
@@ -267,8 +294,11 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
     } catch (error) {
       console.error('Error relisting market item:', error);
       toast.error('Gagal mere-list NFT. Silakan coba lagi.');
+    } finally {
+      setCreateMarketItemOrRelistLoading(false);
     }
   }, [
+    createMarketItemOrRelistLoading,
     currentPrice,
     marketItemData?.marketItemId,
     marketItemRefetch,
@@ -351,7 +381,16 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
                     ? handleRelistMarketItem
                     : handleCreateMarketItem
                 }
+                disabled={
+                  createMarketItemOrRelistLoading ||
+                  !currentPrice ||
+                  isNaN(Number(currentPrice)) ||
+                  Number(currentPrice) <= 0
+                }
               >
+                {createMarketItemOrRelistLoading && (
+                  <Loader2 className="animate-spin"></Loader2>
+                )}
                 {marketItemData?.canceled ? 'Relist' : 'Sell'}
               </Button>
             </>
@@ -366,7 +405,11 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
                   variant={'default'}
                   className="z-1"
                   onClick={handleCancelMarketItem}
+                  disabled={cancelMarketItemLoading}
                 >
+                  {cancelMarketItemLoading && (
+                    <Loader2 className="animate-spin"></Loader2>
+                  )}
                   Cancel
                 </Button>
               ) : (
@@ -374,7 +417,11 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
                   variant={'default'}
                   className="z-1"
                   onClick={handleCreateMarketSale}
+                  disabled={createMarketSaleLoading || !marketItemData?.price}
                 >
+                  {createMarketSaleLoading && (
+                    <Loader2 className="animate-spin"></Loader2>
+                  )}
                   Buy
                 </Button>
               )}
