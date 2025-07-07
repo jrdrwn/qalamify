@@ -1,7 +1,7 @@
 'use client';
 
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
-import { AppKitNetwork, defineChain } from '@reown/appkit/networks';
+import { AppKitNetwork, defineChain, sepolia } from '@reown/appkit/networks';
 import { createAppKit } from '@reown/appkit/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
@@ -40,7 +40,7 @@ const customNetwork = defineChain({
 });
 
 // 3. Set the networks
-const networks = [customNetwork] as [AppKitNetwork, ...AppKitNetwork[]];
+const networks = [customNetwork, sepolia] as [AppKitNetwork, ...AppKitNetwork[]];
 
 // 4. Create Wagmi Adapter
 export const wagmiAdapter = new WagmiAdapter({

@@ -16,9 +16,14 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { cn, formatAddress } from '@/lib/utils';
-import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
+import {
+  useAppKit,
+  useAppKitAccount,
+  useAppKitState,
+} from '@reown/appkit/react';
 import {
   Home,
+  Loader2,
   Menu,
   PencilRuler,
   Plus,
@@ -37,6 +42,7 @@ import { ModeToggle } from './theme-toggle';
 export default function Header() {
   const { open: openWalletModal } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
+  const { open } = useAppKitState();
 
   const { data: userProfileData } = useReadContract({
     abi: NFT_ABI,
@@ -104,8 +110,8 @@ export default function Header() {
 
   const pathname = usePathname();
 
-  const handleConnectWallet = () => {
-    openWalletModal({
+  const handleConnectWallet = async () => {
+    await openWalletModal({
       view: isConnected ? 'Account' : 'Connect',
     });
   };
@@ -152,11 +158,17 @@ export default function Header() {
         </NavigationMenu>
         <div className="flex items-center gap-4">
           <Button variant={'outline'} onClick={handleConnectWallet}>
-            <Wallet />
-            {isConnected && address ? (
-              <Badge>{formatAddress(address, 6)}</Badge>
+            {open ? (
+              <Loader2 className="animate-spin" />
             ) : (
-              <span>Connect Wallet</span>
+              <>
+                <Wallet />
+                {isConnected && address ? (
+                  <Badge>{formatAddress(address, 6)}</Badge>
+                ) : (
+                  <span>Connect Wallet</span>
+                )}
+              </>
             )}
           </Button>
           <ModeToggle />
