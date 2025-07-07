@@ -1,5 +1,7 @@
 import { NFT_ABI } from '@/app/abis/nft';
+import { sha256 } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { readContract } from '@wagmi/core';
 import { ChangeEvent, useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -7,11 +9,27 @@ import { Address } from 'viem';
 import { useWriteContract } from 'wagmi';
 import z from 'zod';
 
+import { wagmiAdapter } from '../providers/wallet-connect';
+
 const formSchema = z.object({
   name: z.string().nonempty(),
   description: z.string().nonempty(),
-  category: z.string().nonempty(),
+  calligraphyStyle: z.coerce.number().nonnegative(),
+  presentationStyle: z.coerce.number().nonnegative(),
+  composition: z.coerce.number().nonnegative(),
+  decoration: z.coerce.number().nonnegative(),
+  dominantColor: z.string().nonempty(),
 });
+
+export interface GenerateAttributesReponse {
+  calligraphyStyle: number;
+  composition: number;
+  decoration: number;
+  description: string;
+  dominantColor: string;
+  name: string;
+  presentationStyle: number;
+}
 
 export const useCreateNFT = (address: Address | undefined) => {
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -20,12 +38,134 @@ export const useCreateNFT = (address: Address | undefined) => {
     defaultValues: {
       name: '',
       description: '',
-      category: '',
+      dominantColor: '#00d492',
     },
   });
   const [isLoading, setIsLoading] = useState(false);
 
   const { writeContractAsync } = useWriteContract();
+
+  const [isGenerating, setIsGenerating] = useState({
+    status: false,
+    type: '' as 'details' | 'attributes' | 'details-attributes' | undefined,
+  });
+
+  const handleGenerate = useCallback(
+    async (
+      imageFile: File | null,
+      type:
+        | 'details'
+        | 'attributes'
+        | 'details-attributes' = 'details-attributes',
+    ) => {
+      if (!imageFile) {
+        toast.error('Please upload an image file to generate attributes');
+        return;
+      }
+
+      setIsGenerating({
+        status: true,
+        type,
+      });
+      // Generate cache key based on file and type
+      const arrayBuffer = await imageFile.arrayBuffer();
+      const hash = await sha256(arrayBuffer);
+      const cacheKey = `generate-${type}-${hash}`;
+
+      // Try get from cache
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const data = JSON.parse(cached);
+        // Set form values sesuai tipe
+        if (type === 'details') {
+          form.reset({
+            ...form.getValues(),
+            name: data.name,
+            description: data.description,
+          });
+        } else if (type === 'attributes') {
+          form.reset({
+            ...form.getValues(),
+            calligraphyStyle: data.calligraphyStyle,
+            presentationStyle: data.presentationStyle,
+            composition: data.composition,
+            decoration: data.decoration,
+            dominantColor: data.dominantColor ?? '',
+          });
+        } else if (type === 'details-attributes') {
+          form.reset({
+            name: data.name,
+            description: data.description,
+            calligraphyStyle: data.calligraphyStyle,
+            presentationStyle: data.presentationStyle,
+            composition: data.composition,
+            decoration: data.decoration,
+            dominantColor: data.dominantColor ?? '',
+          });
+        }
+        toast.success('Loaded from cache');
+        setIsGenerating({ status: false, type: undefined });
+        return;
+      }
+      try {
+        const formData = new FormData();
+        formData.append('image', imageFile);
+
+        const response = await fetch(`/api/generate?type=${type}`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to generate');
+        }
+
+        const data = await response.json();
+
+        // Cache the result
+        localStorage.setItem(cacheKey, JSON.stringify(data));
+
+        // Set form values sesuai tipe
+        if (type === 'details') {
+          form.reset({
+            ...form.getValues(),
+            name: data.name,
+            description: data.description,
+          });
+        } else if (type === 'attributes') {
+          form.reset({
+            ...form.getValues(),
+            calligraphyStyle: data.calligraphyStyle,
+            presentationStyle: data.presentationStyle,
+            composition: data.composition,
+            decoration: data.decoration,
+            dominantColor: data.dominantColor ?? '',
+          });
+        } else if (type === 'details-attributes') {
+          form.reset({
+            name: data.name,
+            description: data.description,
+            calligraphyStyle: data.calligraphyStyle,
+            presentationStyle: data.presentationStyle,
+            composition: data.composition,
+            decoration: data.decoration,
+            dominantColor: data.dominantColor ?? '',
+          });
+        }
+
+        toast.success('Generated successfully');
+      } catch (error) {
+        console.error('Error generating:', error);
+        toast.error('Failed to generate');
+      } finally {
+        setIsGenerating({
+          status: false,
+          type: undefined,
+        });
+      }
+    },
+    [form],
+  );
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files ? e.target.files[0] : null;
@@ -77,10 +217,17 @@ export const useCreateNFT = (address: Address | undefined) => {
 
         const pinataUploadResponseData = await pinataUploadResponse.json();
 
-        if (pinataUploadResponseData.data.is_duplicate) {
-          toast.error('Metadata already exists for this CID', {
-            description: 'Please use a different image or CID.',
-          });
+        const isTokenURIUsed = await readContract(wagmiAdapter.wagmiConfig, {
+          address: process.env.NEXT_PUBLIC_NFT_ADDRESS! as Address,
+          abi: NFT_ABI,
+          functionName: 'isTokenURIUsed',
+          args: [pinataUploadResponseData.data.cid],
+        });
+
+        if (isTokenURIUsed) {
+          toast.error(
+            'This token URI is already used. Please use a different image file.',
+          );
           return;
         }
 
@@ -92,7 +239,11 @@ export const useCreateNFT = (address: Address | undefined) => {
             pinataUploadResponseData.data.cid,
             values.name,
             values.description,
-            values.category,
+            BigInt(values.calligraphyStyle),
+            BigInt(values.presentationStyle),
+            BigInt(values.composition),
+            BigInt(values.decoration),
+            values.dominantColor,
           ],
           account: address as Address,
         });
@@ -125,8 +276,10 @@ export const useCreateNFT = (address: Address | undefined) => {
   return {
     imageFile,
     isLoading,
+    isGenerating,
     handleFileChange,
     onSubmit,
     form,
+    handleGenerate,
   };
 };

@@ -1,4 +1,5 @@
 import { AppKitProvider } from '@/components/providers/wallet-connect';
+import { ReactScan } from '@/components/shared/react-scan';
 import { Toaster } from '@/components/ui/sonner';
 import type { Metadata } from 'next';
 import { Geist_Mono, Sora } from 'next/font/google';
@@ -29,6 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <ReactScan />
       <body
         className={`${soraSans.className} ${geistMono.className} antialiased`}
       >

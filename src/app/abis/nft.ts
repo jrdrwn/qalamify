@@ -465,13 +465,33 @@ export const NFT_ABI = [
           },
           {
             internalType: 'uint256',
-            name: 'mintingAt',
+            name: 'calligraphyStyle',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint256',
+            name: 'presentationStyle',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint256',
+            name: 'composition',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint256',
+            name: 'decoration',
             type: 'uint256',
           },
           {
             internalType: 'string',
-            name: 'category',
+            name: 'dominantColor',
             type: 'string',
+          },
+          {
+            internalType: 'uint256',
+            name: 'mintingAt',
+            type: 'uint256',
           },
         ],
         internalType: 'struct KaligrafiNFT.TokenMetadata',
@@ -603,6 +623,25 @@ export const NFT_ABI = [
     type: 'function',
   },
   {
+    inputs: [
+      {
+        internalType: 'string',
+        name: 'tokenURI',
+        type: 'string',
+      },
+    ],
+    name: 'isTokenURIUsed',
+    outputs: [
+      {
+        internalType: 'bool',
+        name: '',
+        type: 'bool',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
     inputs: [],
     name: 'marketplaceAddress',
     outputs: [
@@ -633,8 +672,28 @@ export const NFT_ABI = [
         type: 'string',
       },
       {
+        internalType: 'uint256',
+        name: 'calligraphyStyle',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint256',
+        name: 'presentationStyle',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint256',
+        name: 'composition',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint256',
+        name: 'decoration',
+        type: 'uint256',
+      },
+      {
         internalType: 'string',
-        name: 'category',
+        name: 'dominantColor',
         type: 'string',
       },
     ],
