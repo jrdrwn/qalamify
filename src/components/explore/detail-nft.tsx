@@ -17,7 +17,6 @@ import {
   Loader2,
   Share2,
 } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -34,6 +33,7 @@ import {
   decorations,
   presentationStyles,
 } from '../create';
+import ZoomableImage from '../shared/zoomable-image';
 import { Input } from '../ui/input';
 import { Skeleton } from '../ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -460,10 +460,10 @@ const NFTDetail = ({ id }: { id: bigint }) => {
           <div className="grid-rows-2 gap-2 space-y-2 md:grid md:grid-cols-2 md:space-y-0">
             {/* NFT Image */}
             <Card className="col-span-1 flex items-center justify-center gap-4 p-0 md:row-span-2">
-              <Image
+              <ZoomableImage
                 src={`${process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL}/ipfs/${tokenURIData}`}
                 alt={tokenMetadata.name}
-                className="h-full max-h-50 rounded-xl object-cover md:max-h-112"
+                className="h-full max-h-50 cursor-zoom-in rounded-xl object-cover md:max-h-112"
                 width={1024}
                 height={1024}
               />

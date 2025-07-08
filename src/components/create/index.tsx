@@ -22,9 +22,9 @@ import {
   Sparkles,
   Upload,
 } from 'lucide-react';
-import Image from 'next/image';
 import { Address } from 'viem';
 
+import ZoomableImage from '../shared/zoomable-image';
 import { Badge } from '../ui/badge';
 import {
   Command,
@@ -242,10 +242,10 @@ const Create = () => {
                   {/* Preview & Preview will showing */}
                   {imageFile ? (
                     <div className="mt-4 rounded-lg border-2 border-border p-1">
-                      <Image
+                      <ZoomableImage
                         src={URL.createObjectURL(imageFile)}
                         alt="NFT Preview"
-                        className="h-48 w-full rounded-lg object-cover object-center"
+                        className="h-48 w-full cursor-zoom-in rounded-lg object-cover object-center"
                         width={400}
                         height={200}
                       />

@@ -1,10 +1,13 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Edit3, Loader2 } from 'lucide-react';
+import { Edit3, ImageIcon, Loader2 } from 'lucide-react';
+import { ChangeEvent, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 
+import ZoomableImage from '../shared/zoomable-image';
 import { Button } from '../ui/button';
 import {
   Form,
@@ -44,10 +47,58 @@ export default function EditProfileForm({
   profile?: z.infer<typeof editProfileFormSchema>;
   isUpdateProfileLoading?: boolean;
 }) {
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
   const form = useForm<z.infer<typeof editProfileFormSchema>>({
     resolver: zodResolver(editProfileFormSchema),
     defaultValues: profile,
   });
+
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files ? e.target.files[0] : null;
+    if (file && file.size > 50 * 1024 * 1024) {
+      toast.error('File size must be less than 50MB');
+      return;
+    }
+    if (!file) {
+      return;
+    }
+    setImageFile(null);
+    setUploadLoading(true);
+    const signedUrlResponse = await fetch('/api/pre-signed-url');
+    if (!signedUrlResponse.ok) {
+      toast.error('Failed to get pre-signed URL');
+      return;
+    }
+
+    const { url } = await signedUrlResponse.json();
+
+    const pinataBody = new FormData();
+
+    pinataBody.append('file', file!);
+    pinataBody.append('network', 'public');
+
+    const pinataUploadResponse = await fetch(url, {
+      method: 'POST',
+      body: pinataBody,
+    });
+
+    if (!pinataUploadResponse.ok) {
+      toast.error('Pinata upload failed');
+      return;
+    }
+
+    const pinataUploadResponseData = await pinataUploadResponse.json();
+
+    form.setValue(
+      'avatarURL',
+      `${process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL}/ipfs/${pinataUploadResponseData.data.cid}`,
+    );
+    setImageFile(file);
+    setUploadLoading(false);
+    toast.success('Image uploaded successfully');
+  };
+
   return (
     <Sheet>
       <SheetTrigger asChild type="button">
@@ -56,7 +107,7 @@ export default function EditProfileForm({
           Edit Profile
         </Button>
       </SheetTrigger>
-      <SheetContent>
+      <SheetContent className="overflow-y-auto">
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onEditProfileAction)}
@@ -139,12 +190,50 @@ export default function EditProfileForm({
               <FormField
                 control={form.control}
                 name="avatarURL"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
-                    <FormLabel>Avatar URL</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter your avatar URL" {...field} />
-                    </FormControl>
+                    <FormLabel>Avatar</FormLabel>
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                      {!uploadLoading && (
+                        <Input
+                          type="file"
+                          id="file-upload"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          name="file-upload"
+                        />
+                      )}
+                    </label>
+                    {/* Preview & Preview will showing */}
+                    {imageFile || profile?.avatarURL ? (
+                      <div className="mt-2 rounded-lg border-2 border-border p-1">
+                        <ZoomableImage
+                          src={profile?.avatarURL || URL.createObjectURL(imageFile!)}
+                          alt="NFT Preview"
+                          className="h-48 w-full cursor-zoom-in rounded-lg object-cover object-center"
+                          width={400}
+                          height={200}
+                        />
+                      </div>
+                    ) : (
+                      <div className="mt-2 flex h-48 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-4">
+                        {uploadLoading ? (
+                          <>
+                            <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
+                            <p className="text-center text-muted-foreground">
+                              Uploading image...
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+                            <p className="text-center text-muted-foreground">
+                              Your Avatar will appear here
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
