@@ -101,7 +101,7 @@ export default function ListNFT() {
 
   return (
     <section className="container mx-auto px-2 pt-4 pb-10 lg:px-0">
-      <div className="grid grid-cols-1 gap-x-8 gap-y-8 px-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2 px-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {isLoadingAvailableMarketItems && renderSkeletons(6)}
         {!isLoadingAvailableMarketItems &&
           nfts.length > 0 &&

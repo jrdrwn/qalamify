@@ -45,9 +45,7 @@ export default function Hero() {
           <span>
             <BellDot className="size-5 text-primary xl:size-6" />
           </span>
-          <p className="text-sm xl:text-base">
-            A New Collection of Calligraphy Awaits!
-          </p>
+          <p className="text-sm xl:text-base">Assalamualaikum!</p>
           <span className="rounded-full bg-primary p-1">
             <ArrowRight className="size-4 text-primary-foreground md:size-5 xl:size-6" />
           </span>

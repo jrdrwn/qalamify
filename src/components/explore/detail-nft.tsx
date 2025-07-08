@@ -456,14 +456,14 @@ const NFTDetail = ({ id }: { id: bigint }) => {
   return (
     <div>
       <div className="px-4 py-4">
-        <div className="mx-auto">
-          <div className="grid grid-rows-3 gap-2 lg:grid-cols-2">
+        <div className="container mx-auto">
+          <div className="grid-rows-2 gap-2 space-y-2 md:grid md:grid-cols-2 md:space-y-0">
             {/* NFT Image */}
-            <Card className="col-span-1 row-span-2 p-0">
+            <Card className="col-span-1 flex items-center justify-center gap-4 p-0 md:row-span-2">
               <Image
                 src={`${process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL}/ipfs/${tokenURIData}`}
                 alt={tokenMetadata.name}
-                className="aspect-[16/10] rounded-xl object-cover"
+                className="h-full max-h-50 rounded-xl object-cover md:max-h-112"
                 width={1024}
                 height={1024}
               />
@@ -471,9 +471,9 @@ const NFTDetail = ({ id }: { id: bigint }) => {
 
             {/* NFT Details */}
             {/* Basic Info */}
-            <Card className="col-span-1 row-span-2 justify-between">
+            <Card className="col-span-1 justify-between md:row-span-2">
               <CardHeader>
-                <div className="flex items-start justify-between">
+                <div className="flex flex-wrap-reverse items-start justify-between gap-x-2 gap-y-4 md:flex-nowrap">
                   <div>
                     <Badge variant="secondary" className="mb-2">
                       {
@@ -483,7 +483,7 @@ const NFTDetail = ({ id }: { id: bigint }) => {
                         )?.label
                       }
                     </Badge>
-                    <CardTitle className="mb-2 text-3xl">
+                    <CardTitle className="mb-2 line-clamp-1 text-3xl">
                       {tokenMetadata.name}
                     </CardTitle>
                   </div>
@@ -634,7 +634,7 @@ const NFTDetail = ({ id }: { id: bigint }) => {
             </Card>
 
             {/* Details */}
-            <Card className="col-span-1 row-span-1">
+            <Card className="col-span-1 md:row-span-1">
               <Tabs defaultValue="attributes">
                 <CardHeader>
                   <TabsList>
@@ -749,7 +749,7 @@ const NFTDetail = ({ id }: { id: bigint }) => {
             </Card>
 
             {/* Creator & Owner Info */}
-            <Card className="col-span-1 row-span-1 justify-center py-2">
+            <Card className="col-span-1 row-span-1 justify-center gap-1 py-2 md:gap-6">
               <CardHeader>
                 <CardTitle className="text-lg font-semibold">
                   Information

@@ -28,7 +28,7 @@ export default function Footer() {
       <div className="container mx-auto rounded-t-3xl bg-muted/50 p-4 text-muted-foreground md:rounded-3xl md:p-8">
         <div className="flex flex-col-reverse flex-wrap items-center justify-center gap-2 md:flex-row md:justify-between">
           <p className="leading-7 [&:not(:first-child)]:mt-6">
-            © 2025 Qalamint. All rights reserved.
+            © 2025 Qalamify. All rights reserved.
           </p>
           <div className="flex gap-2">{LinkGroup(footerLinks)}</div>
         </div>

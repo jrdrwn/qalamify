@@ -157,7 +157,11 @@ export default function Header() {
           </NavigationMenuList>
         </NavigationMenu>
         <div className="flex items-center gap-4">
-          <Button variant={'outline'} onClick={handleConnectWallet}>
+          <Button
+            variant={'outline'}
+            onClick={handleConnectWallet}
+            className="hidden lg:flex"
+          >
             {open ? (
               <Loader2 className="animate-spin" />
             ) : (
@@ -200,6 +204,20 @@ export default function Header() {
                   ))}
                 </NavigationMenuList>
               </NavigationMenu>
+              <Button variant={'outline'} onClick={handleConnectWallet}>
+                {open ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <>
+                    <Wallet />
+                    {isConnected && address ? (
+                      <Badge>{formatAddress(address, 6)}</Badge>
+                    ) : (
+                      <span>Connect Wallet</span>
+                    )}
+                  </>
+                )}
+              </Button>
             </SheetContent>
           </Sheet>
         </div>

@@ -186,10 +186,10 @@ const Create = () => {
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
-              className="grid gap-8 lg:grid-cols-3"
+              className="grid gap-8 md:grid-cols-2 lg:grid-cols-3"
             >
               {/* File Upload */}
-              <Card>
+              <Card className="order-1">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <ImageIcon className="h-5 w-5" />
@@ -259,7 +259,7 @@ const Create = () => {
               </Card>
 
               {/* NFT Details */}
-              <Card>
+              <Card className="order-3 md:col-span-2 lg:order-2 lg:col-span-1">
                 <CardHeader className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <Palette className="h-5 w-5" />
@@ -358,7 +358,7 @@ const Create = () => {
               </Card>
 
               {/* Attributes */}
-              <Card>
+              <Card className="order-2 lg:order-3">
                 <CardHeader className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <Component className="h-5 w-5" />

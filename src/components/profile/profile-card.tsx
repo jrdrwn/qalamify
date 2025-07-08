@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { shortNumber } from '@/lib/utils';
+import { formatAddress, shortNumber } from '@/lib/utils';
 import { Copy, ExternalLink, Heart, Plus, Store, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { Address, formatEther } from 'viem';
@@ -70,7 +70,7 @@ const Profile = ({
         <div className="relative container mx-auto px-2">
           <Card className="relative z-10">
             <CardContent>
-              <div className="flex flex-col items-start gap-6 lg:flex-row lg:items-center">
+              <div className="flex flex-col items-start gap-6 overflow-hidden lg:flex-row lg:items-center">
                 {/* Avatar & Basic Info */}
                 <div className="flex items-center gap-6">
                   <div className="relative">
@@ -161,10 +161,13 @@ const Profile = ({
 
               {/* Social Links & Address */}
               <div className="mt-6 flex flex-wrap items-center gap-4 border-t border-border pt-6">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                   <Wallet className="h-4 w-4" />
                   <span className="rounded-lg bg-muted px-3 py-1 font-mono">
-                    {address}
+                    <span className="hidden sm:inline-block">{address}</span>
+                    <span className="sm:hidden">
+                      {formatAddress(address, 6) || 'Address not set'}
+                    </span>
                   </span>
                   <Button variant="ghost" size="sm" onClick={copyAddress}>
                     <Copy className="h-4 w-4" />
@@ -205,7 +208,7 @@ const Profile = ({
         <Tabs defaultValue="owned">
           <Card>
             <CardHeader>
-              <TabsList className="w-full">
+              <TabsList className="h-auto w-full flex-wrap gap-2">
                 <TabsTrigger value="owned">
                   <Wallet className="mr-2 h-4 w-4" />
                   Owned
@@ -226,7 +229,7 @@ const Profile = ({
             </CardHeader>
             <CardContent>
               <TabsContent value="owned">
-                <div className="grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {tokensOwnedByMeData?.length === 0 && (
                     <p className="col-span-full text-center text-muted-foreground">
                       No NFTs owned yet.
@@ -242,7 +245,7 @@ const Profile = ({
               </TabsContent>
 
               <TabsContent value="created">
-                <div className="grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {tokensCreatedByMeData?.length === 0 && (
                     <p className="col-span-full text-center text-muted-foreground">
                       No NFTs created yet.
@@ -258,7 +261,7 @@ const Profile = ({
               </TabsContent>
 
               <TabsContent value="favorited">
-                <div className="grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {favoritesData?.length === 0 && (
                     <p className="col-span-full text-center text-muted-foreground">
                       No NFTs favorited yet.
@@ -274,7 +277,7 @@ const Profile = ({
               </TabsContent>
 
               <TabsContent value="for-sale">
-                <div className="grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {fetchItemsBySellerData?.length === 0 && (
                     <p className="col-span-full text-center text-muted-foreground">
                       No NFTs for sale yet.
