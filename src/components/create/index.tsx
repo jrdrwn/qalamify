@@ -162,6 +162,7 @@ const Create = () => {
     onSubmit,
     handleGenerate,
     isGenerating,
+    checkLoading,
   } = useCreateNFT(address as Address | undefined);
   return (
     <div className="">
@@ -198,14 +199,16 @@ const Create = () => {
                 </CardHeader>
                 <CardContent className="flex h-full flex-col items-stretch justify-between">
                   <div className="rounded-lg border-2 border-dashed border-border p-4 text-center transition-colors hover:border-primary">
-                    <input
-                      type="file"
-                      id="file-upload"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      name="file-upload"
-                    />
+                    {!checkLoading && (
+                      <input
+                        type="file"
+                        id="file-upload"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        name="file-upload"
+                      />
+                    )}
                     <label htmlFor="file-upload" className="cursor-pointer">
                       <div className="flex flex-col items-center">
                         {imageFile ? (
@@ -249,10 +252,21 @@ const Create = () => {
                     </div>
                   ) : (
                     <div className="mt-4 flex h-48 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-4">
-                      <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                      <p className="text-center text-muted-foreground">
-                        Your artwork will appear here
-                      </p>
+                      {checkLoading ? (
+                        <>
+                          <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
+                          <p className="text-center text-muted-foreground">
+                            Checking image...
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+                          <p className="text-center text-muted-foreground">
+                            Your artwork will appear here
+                          </p>
+                        </>
+                      )}
                     </div>
                   )}
                 </CardContent>

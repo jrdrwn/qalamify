@@ -42,6 +42,7 @@ export const useCreateNFT = (address: Address | undefined) => {
     },
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [checkLoading, setCheckLoading] = useState(false);
 
   const { writeContractAsync } = useWriteContract();
 
@@ -167,14 +168,59 @@ export const useCreateNFT = (address: Address | undefined) => {
     [form],
   );
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files ? e.target.files[0] : null;
     if (file && file.size > 50 * 1024 * 1024) {
       toast.error('File size must be less than 50MB');
       return;
     }
-    setImageFile(file);
-    toast.success('File uploaded successfully');
+    if (!file) {
+      setImageFile(null);
+      return;
+    }
+
+    setCheckLoading(true);
+
+    // Generate cache key based on file
+    const arrayBuffer = await file.arrayBuffer();
+    const hash = await sha256(arrayBuffer);
+    const cacheKey = `check-image-${hash}`;
+
+    // Try get from cache
+    const cached = localStorage.getItem(cacheKey);
+    let data;
+    if (cached) {
+      data = JSON.parse(cached);
+      setCheckLoading(false);
+    } else {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const res = await fetch(`/api/check-image`, {
+        method: 'POST',
+        body: formData,
+      });
+      setCheckLoading(false);
+      if (!res.ok) {
+        toast.error('Failed to check image');
+        return;
+      }
+      data = await res.json();
+      // Cache the result
+      localStorage.setItem(cacheKey, JSON.stringify(data));
+    }
+
+    if (data.isCalligraphy) {
+      setImageFile(file);
+      toast.success('File uploaded successfully', {
+        description: 'You can now generate attributes or details for your NFT.',
+      });
+    } else {
+      setImageFile(null);
+      toast.error('The uploaded image is not a calligraphy artwork', {
+        description: 'Please upload a valid calligraphy image.',
+      });
+    }
   };
 
   const onSubmit = useCallback(
@@ -281,5 +327,6 @@ export const useCreateNFT = (address: Address | undefined) => {
     onSubmit,
     form,
     handleGenerate,
+    checkLoading,
   };
 };

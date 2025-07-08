@@ -42,6 +42,74 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
+app.post('/check-image', async (c) => {
+  const body = await c.req.formData();
+  const imageFile = body.get('image') as File;
+  if (!imageFile) {
+    return c.json({ error: 'No image provided' }, 400);
+  }
+  const imageBuffer = await imageFile.arrayBuffer();
+  const imageData = Buffer.from(imageBuffer).toString('base64');
+
+  const prompt = `
+Analyze the uploaded image to determine if it qualifies as an Islamic calligraphy artwork. Specifically:
+
+Calligraphy Criteria:
+- Does the image contain Arabic script stylized in a traditional or artistic form?
+- Is it likely to be part of known Islamic calligraphy styles (e.g., Diwani, Naskh, Thuluth, Kufi, or modern abstract calligraphy)?
+- Does the text appear meaningful (e.g., verses from the Qur'an, hadith, or religious phrases), or is it decorative/abstract without readable meaning?
+
+Content Moderation (NSFW/Violence):
+- Does the image contain any explicit, sexual, violent, gory, or offensive content?
+- Are there any elements that contradict the norms of Islamic art (e.g., human nudity, depiction of living beings in a disrespectful way)?
+- Is the artwork respectful and culturally appropriate within an Islamic context?
+
+Forgery or Meme/Parody Detection:
+- Does the image appear to be a meme, parody, or altered version of a calligraphy piece in a way that might mock religious content?
+- Does it combine religious script with irrelevant or inappropriate background/media?
+
+Respond ONLY in this JSON format:
+{
+  "isCalligraphy": boolean, // true if the image is Islamic calligraphy
+  "isNSFW": boolean,        // true if the image contains NSFW or offensive content
+  "isForgeryOrMeme": boolean, // true if the image is a meme, parody, or forgery
+  "reason": string          // short explanation
+}
+`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: [
+      {
+        inlineData: {
+          mimeType: imageFile.type,
+          data: imageData,
+        },
+      },
+      { text: prompt },
+    ],
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          isCalligraphy: { type: Type.BOOLEAN },
+          isNSFW: { type: Type.BOOLEAN },
+          isForgeryOrMeme: { type: Type.BOOLEAN },
+          reason: { type: Type.STRING },
+        },
+      },
+    },
+  });
+
+  const text = response?.candidates?.[0]?.content?.parts?.[0].text;
+  if (text) {
+    const result = JSON.parse(text);
+    return c.json(result);
+  }
+  return c.json({ error: 'Failed to check image' }, 500);
+});
+
 app.post('/generate', async (c) => {
   const type = c.req.query('type') || 'details';
   const body = await c.req.formData();
