@@ -6,13 +6,20 @@ import { useAppKitAccount, UseAppKitAccountReturn } from '@reown/appkit/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Address } from 'viem';
-import { useReadContract, useWriteContract } from 'wagmi';
+import {
+  useReadContract,
+  useWatchContractEvent,
+  useWriteContract,
+} from 'wagmi';
 import z from 'zod';
 
 import { editProfileFormSchema } from './edit-form';
 import Profile from './profile-card';
 
 export const OtherProfile = ({ address }: { address: Address }) => {
+  const { address: currentAddress } = useAppKitAccount() as {
+    address: Address;
+  } & UseAppKitAccountReturn;
   const { data: profile, refetch: refetchProfile } = useReadContract({
     address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
     abi: NFT_ABI,
@@ -60,20 +67,119 @@ export const OtherProfile = ({ address }: { address: Address }) => {
       account: address,
     });
 
-  const refetchAllData = async () => {
-    await Promise.all([
-      userStatisticsRefetch(),
-      tokensOwnedByMeRefetch(),
-      tokensCreatedByMeRefetch(),
-      favoritesRefetch(),
-      refetchProfile(),
-      fetchItemsBySellerRefetch(),
-    ]);
-  };
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+    abi: NFT_ABI,
+    eventName: 'UserProfileUpdated',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.user === currentAddress) {
+        toast.success('Profile updated successfully!');
+        await refetchProfile();
+      }
+    },
+  });
 
-  refetchAllData().catch((error) => {
-    console.error('Error refetching data:', error);
-    toast.error('Failed to refetch data');
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESSS as Address,
+    abi: NFT_ABI,
+    eventName: 'TokenFavorited',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.user === currentAddress) {
+        toast.success('Token favorited successfully!');
+        await favoritesRefetch();
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESSS as Address,
+    abi: NFT_ABI,
+    eventName: 'TokenUnfavorited',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.user === currentAddress) {
+        toast.success('Token unfavorited successfully!');
+        await favoritesRefetch();
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemCreated',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.seller === currentAddress) {
+        toast.success('Market item created successfully!');
+        await fetchItemsBySellerRefetch();
+        await tokensOwnedByMeRefetch();
+        await tokensCreatedByMeRefetch();
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+    abi: NFT_ABI,
+    eventName: 'TokenMinted',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.creator === currentAddress) {
+        toast.success('Token minted successfully!');
+        await tokensCreatedByMeRefetch();
+        await tokensOwnedByMeRefetch();
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemCanceled',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.seller === currentAddress) {
+        await userStatisticsRefetch();
+        await tokensCreatedByMeRefetch();
+        await tokensOwnedByMeRefetch();
+        await fetchItemsBySellerRefetch();
+        toast.success('Market item canceled successfully!');
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemSold',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.buyer === currentAddress) {
+        toast.success('Market item purchased successfully!');
+        await fetchItemsBySellerRefetch();
+        await tokensOwnedByMeRefetch();
+        await tokensCreatedByMeRefetch();
+        await userStatisticsRefetch();
+      }
+    },
+  });
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemRelisted',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.seller === currentAddress) {
+        await userStatisticsRefetch();
+        await tokensCreatedByMeRefetch();
+        await tokensOwnedByMeRefetch();
+        await fetchItemsBySellerRefetch();
+        toast.success('Market item relisted successfully!');
+      }
+    },
   });
 
   return (
@@ -143,20 +249,118 @@ export const MyProfile = () => {
       account: address,
     });
 
-  const refetchAllData = async () => {
-    await Promise.all([
-      userStatisticsRefetch(),
-      tokensOwnedByMeRefetch(),
-      tokensCreatedByMeRefetch(),
-      favoritesRefetch(),
-      refetchProfile(),
-      fetchItemsBySellerRefetch(),
-    ]);
-  };
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+    abi: NFT_ABI,
+    eventName: 'UserProfileUpdated',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.user === address) {
+        toast.success('Profile updated successfully!');
+        await refetchProfile();
+      }
+    },
+  });
 
-  refetchAllData().catch((error) => {
-    console.error('Error refetching data:', error);
-    toast.error('Failed to refetch data');
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESSS as Address,
+    abi: NFT_ABI,
+    eventName: 'TokenFavorited',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.user === address) {
+        toast.success('Token favorited successfully!');
+        await favoritesRefetch();
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESSS as Address,
+    abi: NFT_ABI,
+    eventName: 'TokenUnfavorited',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.user === address) {
+        toast.success('Token unfavorited successfully!');
+        await favoritesRefetch();
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemCreated',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.seller === address) {
+        toast.success('Market item created successfully!');
+        await fetchItemsBySellerRefetch();
+        await tokensOwnedByMeRefetch();
+        await tokensCreatedByMeRefetch();
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
+    abi: NFT_ABI,
+    eventName: 'TokenMinted',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.creator === address) {
+        toast.success('Token minted successfully!');
+        await tokensCreatedByMeRefetch();
+        await tokensOwnedByMeRefetch();
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemCanceled',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.seller === address) {
+        toast.success('Market item canceled successfully!');
+        await fetchItemsBySellerRefetch();
+        await tokensOwnedByMeRefetch();
+        await tokensCreatedByMeRefetch();
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemSold',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.buyer === address) {
+        toast.success('Market item purchased successfully!');
+        await fetchItemsBySellerRefetch();
+        await tokensOwnedByMeRefetch();
+        await tokensCreatedByMeRefetch();
+        await userStatisticsRefetch();
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemRelisted',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.seller === address) {
+        toast.success('Market item relisted successfully!');
+        await fetchItemsBySellerRefetch();
+        await tokensOwnedByMeRefetch();
+        await tokensCreatedByMeRefetch();
+      }
+    },
   });
 
   const handleEditProfile = async (
@@ -178,8 +382,7 @@ export const MyProfile = () => {
         ],
         account: address as Address,
       });
-      toast.success('Profile updated successfully');
-      await refetchProfile();
+      toast.info('Updating profile... Please wait a moment.');
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error('Failed to update profile');

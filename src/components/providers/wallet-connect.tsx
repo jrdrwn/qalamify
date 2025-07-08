@@ -40,7 +40,10 @@ const customNetwork = defineChain({
 });
 
 // 3. Set the networks
-const networks = [customNetwork, sepolia] as [AppKitNetwork, ...AppKitNetwork[]];
+const networks = [customNetwork, sepolia] as [
+  AppKitNetwork,
+  ...AppKitNetwork[],
+];
 
 // 4. Create Wagmi Adapter
 export const wagmiAdapter = new WagmiAdapter({

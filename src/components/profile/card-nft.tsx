@@ -5,11 +5,14 @@ import { useAppKitAccount } from '@reown/appkit/react';
 import { CircleUserRound, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Address, formatEther } from 'viem';
-import { useReadContract, useWriteContract } from 'wagmi';
+import {
+  useReadContract,
+  useWatchContractEvent,
+  useWriteContract,
+} from 'wagmi';
 
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
@@ -42,7 +45,7 @@ export function CardNFTSkeleton() {
 }
 
 export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
-  const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const { address: currentAddress } = useAppKitAccount() as {
     address: Address;
   };
@@ -110,6 +113,70 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
   const [createMarketItemOrRelistLoading, setCreateMarketItemOrRelistLoading] =
     useState(false);
 
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemCreated',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.seller === currentAddress) {
+        await marketItemRefetch();
+        await ownerOfRefetch();
+        await tokenMetadataRefetch();
+        toast.success('Market item created successfully!');
+        setLoading(false);
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemCanceled',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.seller === currentAddress) {
+        await marketItemRefetch();
+        await ownerOfRefetch();
+        await tokenMetadataRefetch();
+        toast.success('Market item canceled successfully!');
+        setLoading(false);
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemRelisted',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.seller === currentAddress) {
+        await marketItemRefetch();
+        await ownerOfRefetch();
+        await tokenMetadataRefetch();
+        toast.success('Market item relisted successfully!');
+        setLoading(false);
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemSold',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.buyer === currentAddress) {
+        await marketItemRefetch();
+        await ownerOfRefetch();
+        await tokenMetadataRefetch();
+        toast.success('NFT purchased successfully!');
+        setLoading(false);
+      }
+    },
+  });
+
   const handleCurrentPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCurrentPrice(e.target.value);
   };
@@ -148,11 +215,10 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
         ],
         account: currentAddress,
       });
-      await marketItemRefetch();
-      await ownerOfRefetch();
-      await tokenMetadataRefetch();
-      router.refresh();
-      toast.success('NFT berhasil dijual!');
+      toast.info(
+        'Please wait, creating market item... This may take a few seconds.',
+      );
+      setLoading(true);
     } catch (error) {
       console.error('Error creating market item:', error);
       toast.error('Gagal menjual NFT. Silakan coba lagi.');
@@ -165,10 +231,6 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
     writeContractAsync,
     tokenId,
     currentAddress,
-    marketItemRefetch,
-    ownerOfRefetch,
-    tokenMetadataRefetch,
-    router,
   ]);
 
   const handleCancelMarketItem = useCallback(async () => {
@@ -190,11 +252,10 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
         ],
         account: currentAddress,
       });
-      await marketItemRefetch();
-      await ownerOfRefetch();
-      await tokenMetadataRefetch();
-      router.refresh();
-      toast.success('NFT berhasil dibatalkan dari pasar!');
+      toast.info(
+        'Please wait, canceling market item... This may take a few seconds.',
+      );
+      setLoading(true);
     } catch (error) {
       console.error('Error canceling market item:', error);
       toast.error('Gagal membatalkan NFT dari pasar. Silakan coba lagi.');
@@ -205,10 +266,6 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
     cancelMarketItemLoading,
     currentAddress,
     marketItemData,
-    marketItemRefetch,
-    ownerOfRefetch,
-    router,
-    tokenMetadataRefetch,
     writeContractAsync,
   ]);
 
@@ -232,11 +289,9 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
         account: currentAddress,
         value: marketItemData?.price,
       });
-      await marketItemRefetch();
-      await ownerOfRefetch();
-      await tokenMetadataRefetch();
-      router.refresh();
-      toast.success('Pembelian NFT berhasil!');
+
+      toast.info('Please wait, purchasing NFT... This may take a few seconds.');
+      setLoading(true);
     } catch (error) {
       console.error('Error creating market sale:', error);
       toast.error('Gagal membeli NFT. Silakan coba lagi.');
@@ -248,10 +303,6 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
     currentAddress,
     marketItemData?.marketItemId,
     marketItemData?.price,
-    marketItemRefetch,
-    ownerOfRefetch,
-    router,
-    tokenMetadataRefetch,
     writeContractAsync,
   ]);
 
@@ -286,11 +337,10 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
           priceInWei,
         ],
       });
-      await marketItemRefetch();
-      await ownerOfRefetch();
-      await tokenMetadataRefetch();
-      router.refresh();
-      toast.success('NFT berhasil direlist!');
+      toast.info(
+        'Please wait, relisting market item... This may take a few seconds.',
+      );
+      setLoading(true);
     } catch (error) {
       console.error('Error relisting market item:', error);
       toast.error('Gagal mere-list NFT. Silakan coba lagi.');
@@ -301,11 +351,7 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
     createMarketItemOrRelistLoading,
     currentPrice,
     marketItemData?.marketItemId,
-    marketItemRefetch,
-    ownerOfRefetch,
-    router,
     tokenId,
-    tokenMetadataRefetch,
     writeContractAsync,
   ]);
 
@@ -315,16 +361,16 @@ export default function CardNFTViewed({ tokenId }: { tokenId: bigint }) {
       setCurrentPrice(formatEther(marketItemData.price));
   }, [marketItemData]);
 
-  if (tokenMetadata === null) {
+  if (tokenMetadata === null || loading) {
     return (
-      <Card className="relative col-span-1 gap-2 pt-42 pb-4">
-        <Skeleton className="absolute -top-8 left-1/2 h-46 w-[calc(100%-1rem)] -translate-x-1/2 rounded-lg" />
-        <CardContent className="px-4">
-          <Skeleton className="mb-2 h-6 w-full rounded-md" />
+      <Card className="relative col-span-1 gap-2 py-2">
+        <CardContent className="mb-2 px-2">
+          <Skeleton className="mb-4 h-46 rounded-lg" />
+          <Skeleton className="mb-3 h-6 w-full rounded-md" />
         </CardContent>
-        <CardFooter className="flex items-end justify-between px-4">
-          <Skeleton className="h-4 w-24 rounded-md" />
-          <Skeleton className="h-4 w-24 rounded-md" />
+        <CardFooter className="flex items-end justify-between px-2">
+          <Skeleton className="h-6 w-24 rounded-md" />
+          <Skeleton className="h-6 w-24 rounded-md" />
         </CardFooter>
       </Card>
     );

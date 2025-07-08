@@ -9,13 +9,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { formatAddress, formatDate } from '@/lib/utils';
 import { useAppKitAccount } from '@reown/appkit/react';
-import { Clock, ExternalLink, Flag, Heart, Share2 } from 'lucide-react';
+import {
+  Clock,
+  ExternalLink,
+  Flag,
+  Heart,
+  Loader2,
+  Share2,
+} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Address, formatEther } from 'viem';
-import { useReadContract, useWriteContract } from 'wagmi';
+import {
+  useReadContract,
+  useWatchContractEvent,
+  useWriteContract,
+} from 'wagmi';
 
 import {
   calligraphyStyles,
@@ -23,8 +34,8 @@ import {
   decorations,
   presentationStyles,
 } from '../create';
-import ConfirmDialog from '../shared/confrm-dialog';
 import { Input } from '../ui/input';
+import { Skeleton } from '../ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
 // Fungsi validasi harga
@@ -34,12 +45,16 @@ function isValidPrice(price: string | number) {
 }
 
 const NFTDetail = ({ id }: { id: bigint }) => {
-  const [showBuyDialog, setShowBuyDialog] = useState(false);
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [inputPrice, setInputPrice] = useState<string>('');
 
   const tokenId = id;
+
+  const [createMarketSaleLoading, setCreateMarketSaleLoading] = useState(false);
+  const [cancelMarketItemLoading, setCancelMarketItemLoading] = useState(false);
+  const [createMarketItemOrRelistLoading, setCreateMarketItemOrRelistLoading] =
+    useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   const { address: currentAddress } = useAppKitAccount() as {
     address: Address;
@@ -133,16 +148,94 @@ const NFTDetail = ({ id }: { id: bigint }) => {
     return '';
   }, [marketItemData]);
 
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemCreated',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.seller === currentAddress) {
+        await marketItemRefetch();
+        await ownerOfRefetch();
+        await userProfileSellerRefetch();
+        await userProfileOwnerOfRefetch();
+        await ownershipHistoryRefetch();
+        toast.success('Market item created successfully!');
+        setLoading(false);
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemCanceled',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.seller === currentAddress) {
+        await marketItemRefetch();
+        await ownerOfRefetch();
+        await userProfileSellerRefetch();
+        await userProfileOwnerOfRefetch();
+        await ownershipHistoryRefetch();
+        toast.success('Market item canceled successfully!');
+        setLoading(false);
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemRelisted',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.seller === currentAddress) {
+        await marketItemRefetch();
+        await ownerOfRefetch();
+        await userProfileSellerRefetch();
+        await userProfileOwnerOfRefetch();
+        await ownershipHistoryRefetch();
+        toast.success('Market item relisted successfully!');
+        setLoading(false);
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemSold',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.buyer === currentAddress) {
+        await marketItemRefetch();
+        await ownerOfRefetch();
+        await userProfileSellerRefetch();
+        await userProfileOwnerOfRefetch();
+        await ownershipHistoryRefetch();
+        toast.success('NFT purchased successfully!');
+        setLoading(false);
+      }
+    },
+  });
+
   // Input price handler
   const handleCurrentPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputPrice(e.target.value);
   };
 
   const handleCreateMarketItem = useCallback(async () => {
+    if (createMarketItemOrRelistLoading) return;
     if (!isValidPrice(inputPrice)) {
       toast.error('Harga tidak valid. Harap masukkan harga yang benar.');
       return;
     }
+    if (!currentAddress) {
+      toast.warning('Please connect to a wallet');
+      return;
+    }
+    setCreateMarketItemOrRelistLoading(true);
     try {
       await writeContractAsync({
         address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
@@ -163,32 +256,34 @@ const NFTDetail = ({ id }: { id: bigint }) => {
         ],
         account: currentAddress,
       });
-      await marketItemRefetch();
-      await ownerOfRefetch();
-      await ownershipHistoryRefetch();
-      await userProfileOwnerOfRefetch();
-      await userProfileSellerRefetch();
-      toast.success('NFT berhasil dijual!');
+      toast.info(
+        'Please wait, creating market item... This may take a few seconds.',
+      );
+      setLoading(true);
     } catch (error) {
       console.error('Error creating market item:', error);
       toast.error('Gagal menjual NFT. Silakan coba lagi.');
+    } finally {
+      setCreateMarketItemOrRelistLoading(false);
     }
   }, [
+    createMarketItemOrRelistLoading,
     inputPrice,
+    currentAddress,
     writeContractAsync,
     tokenId,
-    currentAddress,
-    marketItemRefetch,
-    ownerOfRefetch,
-    ownershipHistoryRefetch,
-    userProfileOwnerOfRefetch,
-    userProfileSellerRefetch,
   ]);
 
   const handleCancelMarketItem = useCallback(async () => {
+    if (cancelMarketItemLoading) return;
     if (!marketItemData) {
       return;
     }
+    if (!currentAddress) {
+      toast.warning('Please connect to a wallet');
+      return;
+    }
+    setCancelMarketItemLoading(true);
     try {
       await writeContractAsync({
         address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
@@ -200,32 +295,30 @@ const NFTDetail = ({ id }: { id: bigint }) => {
         ],
         account: currentAddress as Address,
       });
-      await marketItemRefetch();
-      await ownerOfRefetch();
-      await ownershipHistoryRefetch();
-      await userProfileOwnerOfRefetch();
-      await userProfileSellerRefetch();
-      toast.success('NFT berhasil dibatalkan dari pasar!');
+      toast.info(
+        'Please wait, canceling market item... This may take a few seconds.',
+      );
+      setLoading(true);
     } catch (error) {
       console.error('Error canceling market item:', error);
       toast.error('Gagal membatalkan NFT dari pasar. Silakan coba lagi.');
+    } finally {
+      setCancelMarketItemLoading(false);
     }
   }, [
+    cancelMarketItemLoading,
     currentAddress,
     marketItemData,
-    marketItemRefetch,
-    ownerOfRefetch,
-    ownershipHistoryRefetch,
-    userProfileOwnerOfRefetch,
-    userProfileSellerRefetch,
     writeContractAsync,
   ]);
 
   const handleCreateMarketSale = useCallback(async () => {
+    if (createMarketSaleLoading) return;
     if (!currentAddress) {
       toast.warning('Please connect to a wallet');
       return;
     }
+    setCreateMarketSaleLoading(true);
     try {
       await writeContractAsync({
         address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
@@ -238,33 +331,33 @@ const NFTDetail = ({ id }: { id: bigint }) => {
         account: currentAddress,
         value: marketItemData?.price,
       });
-      await marketItemRefetch();
-      await ownerOfRefetch();
-      await ownershipHistoryRefetch();
-      await userProfileOwnerOfRefetch();
-      await userProfileSellerRefetch();
-      toast.success('Pembelian NFT berhasil!');
+      toast.info('Please wait, purchasing NFT... This may take a few seconds.');
+      setLoading(true);
     } catch (error) {
       console.error('Error creating market sale:', error);
       toast.error('Gagal membeli NFT. Silakan coba lagi.');
+    } finally {
+      setCreateMarketSaleLoading(false);
     }
   }, [
+    createMarketSaleLoading,
     currentAddress,
     marketItemData?.marketItemId,
     marketItemData?.price,
-    marketItemRefetch,
-    ownerOfRefetch,
-    ownershipHistoryRefetch,
-    userProfileOwnerOfRefetch,
-    userProfileSellerRefetch,
     writeContractAsync,
   ]);
 
   const handleRelistMarketItem = useCallback(async () => {
+    if (createMarketItemOrRelistLoading) return;
     if (!isValidPrice(inputPrice)) {
       toast.error('Harga tidak valid. Harap masukkan harga yang benar.');
       return;
     }
+    if (!currentAddress) {
+      toast.warning('Please connect to a wallet');
+      return;
+    }
+    setCreateMarketItemOrRelistLoading(true);
     try {
       // approve nft
       await writeContractAsync({
@@ -285,33 +378,32 @@ const NFTDetail = ({ id }: { id: bigint }) => {
           priceInWei,
         ],
       });
-      await marketItemRefetch();
-      await ownerOfRefetch();
-      await ownershipHistoryRefetch();
-      await userProfileOwnerOfRefetch();
-      await userProfileSellerRefetch();
-      toast.success('NFT berhasil direlist!');
+      toast.info(
+        'Please wait, relisting market item... This may take a few seconds.',
+      );
+      setLoading(true);
     } catch (error) {
       console.error('Error relisting market item:', error);
       toast.error('Gagal mere-list NFT. Silakan coba lagi.');
+    } finally {
+      setCreateMarketItemOrRelistLoading(false);
     }
   }, [
+    createMarketItemOrRelistLoading,
+    currentAddress,
     inputPrice,
     marketItemData?.marketItemId,
-    marketItemRefetch,
-    ownerOfRefetch,
-    ownershipHistoryRefetch,
     tokenId,
-    userProfileOwnerOfRefetch,
-    userProfileSellerRefetch,
     writeContractAsync,
   ]);
 
   const handleFavoriteToggle = useCallback(async () => {
+    if (favoriteLoading) return;
     if (!currentAddress) {
       toast.warning('Please connect to a wallet');
       return;
     }
+    setFavoriteLoading(true);
     try {
       await writeContractAsync({
         address: process.env.NEXT_PUBLIC_NFT_ADDRESS as Address,
@@ -328,8 +420,10 @@ const NFTDetail = ({ id }: { id: bigint }) => {
       toast.error(
         `Gagal ${favorite ? 'menghapus' : 'menambahkan'} NFT ke daftar favorit. Silakan coba lagi.`,
       );
+    } finally {
+      setFavoriteLoading(false);
     }
-  }, [currentAddress, favorite, tokenId, writeContractAsync]);
+  }, [currentAddress, favorite, favoriteLoading, tokenId, writeContractAsync]);
 
   useEffect(() => {
     if (isFavoriteData !== undefined) {
@@ -337,49 +431,22 @@ const NFTDetail = ({ id }: { id: bigint }) => {
     }
   }, [isFavoriteData]);
 
-  if (!tokenMetadata) {
-    return <>Loading</>;
+  if (!tokenMetadata || loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent>
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-1/3" />
+              <Skeleton className="h-6 w-2/3" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
-
-  const handleBuy = async () => {
-    setIsLoading(true);
-    setShowBuyDialog(false);
-
-    try {
-      // Simulate buying process
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-
-      toast.success('NFT purchased successfully!', {
-        description: 'The NFT has been transferred to your wallet.',
-      });
-    } catch (_error) {
-      toast.error('Failed to purchase NFT', {
-        description: 'Please try again or check your wallet connection.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCancel = async () => {
-    setIsLoading(true);
-    setShowCancelDialog(false);
-
-    try {
-      // Simulate canceling listing
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      toast.success('Listing canceled successfully!', {
-        description: 'Your NFT is no longer for sale.',
-      });
-    } catch (_error) {
-      toast.error('Failed to cancel listing', {
-        description: 'Please try again later.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -425,10 +492,15 @@ const NFTDetail = ({ id }: { id: bigint }) => {
                       variant={favorite ? 'secondary' : 'outline'}
                       size="icon"
                       onClick={handleFavoriteToggle}
+                      disabled={favoriteLoading}
                     >
-                      <Heart
-                        className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`}
-                      />
+                      {favoriteLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin"></Loader2>
+                      ) : (
+                        <Heart
+                          className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`}
+                        />
+                      )}
                     </Button>
                     <Button variant="outline" size="icon" onClick={handleShare}>
                       <Share2 className="h-4 w-4" />
@@ -489,7 +561,14 @@ const NFTDetail = ({ id }: { id: bigint }) => {
                             ? handleRelistMarketItem
                             : handleCreateMarketItem
                         }
+                        disabled={
+                          !isValidPrice(inputPrice) ||
+                          createMarketItemOrRelistLoading
+                        }
                       >
+                        {createMarketItemOrRelistLoading && (
+                          <Loader2 className="animate-spin"></Loader2>
+                        )}
                         {marketItemData?.canceled ? 'Relist' : 'Sell'}
                       </Button>
                     </div>
@@ -511,7 +590,11 @@ const NFTDetail = ({ id }: { id: bigint }) => {
                           variant={'default'}
                           className="z-1"
                           onClick={handleCancelMarketItem}
+                          disabled={cancelMarketItemLoading}
                         >
+                          {cancelMarketItemLoading && (
+                            <Loader2 className="animate-spin"></Loader2>
+                          )}
                           Cancel
                         </Button>
                       ) : (
@@ -519,7 +602,15 @@ const NFTDetail = ({ id }: { id: bigint }) => {
                           variant={'default'}
                           className="z-1"
                           onClick={handleCreateMarketSale}
+                          disabled={
+                            createMarketSaleLoading ||
+                            !marketItemData?.price ||
+                            marketItemData?.canceled
+                          }
                         >
+                          {createMarketSaleLoading && (
+                            <Loader2 className="animate-spin"></Loader2>
+                          )}
                           Buy
                         </Button>
                       )}
@@ -764,54 +855,9 @@ const NFTDetail = ({ id }: { id: bigint }) => {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Attributes */}
-            {/* <Card className="col-span-1 row-span-1">
-              <CardHeader>
-                <CardTitle>Attributes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  {nft.attributes.map((attr, index) => (
-                    <div
-                      key={index}
-                      className="rounded-lg bg-gray-50 p-3 text-center"
-                    >
-                      <div className="text-sm font-medium text-muted-foreground">
-                        {attr.trait_type}
-                      </div>
-                      <div className="text-lg font-bold text-gray-900">
-                        {attr.value}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card> */}
           </div>
         </div>
       </div>
-
-      <ConfirmDialog
-        open={showBuyDialog}
-        onOpenChange={setShowBuyDialog}
-        title="Confirm Purchase"
-        description={`Are you sure you want to buy "${tokenMetadata.name}" for ${marketItemData?.price} ETH? This transaction cannot be undone.`}
-        onConfirm={handleBuy}
-        confirmText="Buy Now"
-        cancelText="Cancel"
-      />
-
-      <ConfirmDialog
-        open={showCancelDialog}
-        onOpenChange={setShowCancelDialog}
-        title="Cancel Listing"
-        description={`Are you sure you want to cancel the listing for "${tokenMetadata.name}"? It will no longer be available for purchase.`}
-        onConfirm={handleCancel}
-        confirmText="Cancel Listing"
-        cancelText="Keep Listed"
-        variant="destructive"
-      />
     </div>
   );
 };

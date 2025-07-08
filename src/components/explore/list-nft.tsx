@@ -5,7 +5,7 @@ import { useAppKitAccount } from '@reown/appkit/react';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
-import { useReadContract } from 'wagmi';
+import { useReadContract, useWatchContractEvent } from 'wagmi';
 
 import { Button } from '../ui/button';
 import CardNFT, { CardNFTSkeleton } from './card-nft';
@@ -26,6 +26,58 @@ export default function ListNFT() {
     address: MARKET_ADDRESS,
     abi: MARKETPLACE_NFT,
     functionName: 'fetchAvailableMarketItems',
+  });
+
+  useWatchContractEvent({
+    address: MARKET_ADDRESS,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemCreated',
+    async onLogs(logs) {
+      // Hanya refetch jika event berasal dari akun yang sedang aktif
+      if (logs[0].args?.seller?.toLowerCase() === address?.toLowerCase()) {
+        await availableMarketItemsRefetch();
+        toast.success('NFT berhasil dibuat di pasar!');
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: MARKET_ADDRESS,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemCanceled',
+    async onLogs(logs) {
+      // Hanya refetch jika event berasal dari akun yang sedang aktif
+      if (logs[0].args?.seller?.toLowerCase() === address?.toLowerCase()) {
+        await availableMarketItemsRefetch();
+        toast.success('NFT berhasil dibatalkan dari pasar!');
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: MARKET_ADDRESS,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemSold',
+    async onLogs(logs) {
+      // Hanya refetch jika event berasal dari akun yang sedang aktif
+      if (logs[0].args?.buyer?.toLowerCase() === address?.toLowerCase()) {
+        await availableMarketItemsRefetch();
+        toast.success('NFT berhasil dibeli!');
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: MARKET_ADDRESS,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemRelisted',
+    async onLogs(logs) {
+      // Hanya refetch jika event berasal dari akun yang sedang aktif
+      if (logs[0].args?.seller?.toLowerCase() === address?.toLowerCase()) {
+        await availableMarketItemsRefetch();
+        toast.success('NFT berhasil dire-list di pasar!');
+      }
+    },
   });
 
   const createQueryString = useCallback(
@@ -49,7 +101,7 @@ export default function ListNFT() {
 
   return (
     <section className="container mx-auto px-2 pt-4 pb-10 lg:px-0">
-      <div className="grid grid-cols-1 gap-x-8 gap-y-16 px-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-x-8 gap-y-8 px-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {isLoadingAvailableMarketItems && renderSkeletons(6)}
         {!isLoadingAvailableMarketItems &&
           nfts.length > 0 &&
@@ -58,7 +110,6 @@ export default function ListNFT() {
               key={nft.marketItemId}
               currentAccount={address || MARKET_ADDRESS}
               nft={nft}
-              availableMarketItemsRefetch={availableMarketItemsRefetch}
             />
           ))}
         {!isLoadingAvailableMarketItems && nfts.length === 0 && (

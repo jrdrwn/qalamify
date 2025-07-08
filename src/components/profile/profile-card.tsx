@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { shortNumber } from '@/lib/utils';
 import { Copy, ExternalLink, Heart, Plus, Store, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { Address, formatEther } from 'viem';
@@ -142,13 +143,15 @@ const Profile = ({
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary">
-                    {userStatisticsData && formatEther(userStatisticsData[1])}
+                    {userStatisticsData &&
+                      shortNumber(parseInt(formatEther(userStatisticsData[1])))}
                   </div>
                   <div className="text-sm text-foreground/50">Revenue</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary">
-                    {userStatisticsData && formatEther(userStatisticsData[2])}
+                    {userStatisticsData &&
+                      shortNumber(parseInt(formatEther(userStatisticsData[2])))}
                   </div>
                   <div className="text-sm text-foreground/50">
                     Royalty Earned
@@ -223,7 +226,7 @@ const Profile = ({
             </CardHeader>
             <CardContent>
               <TabsContent value="owned">
-                <div className="grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {tokensOwnedByMeData?.length === 0 && (
                     <p className="col-span-full text-center text-muted-foreground">
                       No NFTs owned yet.
@@ -239,7 +242,7 @@ const Profile = ({
               </TabsContent>
 
               <TabsContent value="created">
-                <div className="grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {tokensCreatedByMeData?.length === 0 && (
                     <p className="col-span-full text-center text-muted-foreground">
                       No NFTs created yet.
@@ -255,7 +258,7 @@ const Profile = ({
               </TabsContent>
 
               <TabsContent value="favorited">
-                <div className="grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {favoritesData?.length === 0 && (
                     <p className="col-span-full text-center text-muted-foreground">
                       No NFTs favorited yet.
@@ -271,7 +274,7 @@ const Profile = ({
               </TabsContent>
 
               <TabsContent value="for-sale">
-                <div className="grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {fetchItemsBySellerData?.length === 0 && (
                     <p className="col-span-full text-center text-muted-foreground">
                       No NFTs for sale yet.

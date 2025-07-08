@@ -27,3 +27,12 @@ export async function sha256(buffer: ArrayBuffer) {
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
 }
+
+export function shortNumber(num: number): string {
+  const formatter = new Intl.NumberFormat('en-US', {
+    notation: 'compact',
+    compactDisplay: 'short',
+  });
+
+  return formatter.format(num);
+}

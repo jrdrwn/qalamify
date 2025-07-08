@@ -9,7 +9,11 @@ import { useSearchParams } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { Address, formatEther } from 'viem';
-import { useReadContract, useWriteContract } from 'wagmi';
+import {
+  useReadContract,
+  useWatchContractEvent,
+  useWriteContract,
+} from 'wagmi';
 
 import { AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
@@ -39,14 +43,14 @@ export function FormatedTime(datetime: string) {
 
 export function CardNFTSkeleton() {
   return (
-    <Card className="relative col-span-1 gap-2 pt-42 pb-4">
-      <Skeleton className="absolute -top-8 left-1/2 h-46 w-[calc(100%-1rem)] -translate-x-1/2 rounded-lg" />
-      <CardContent className="px-4">
-        <Skeleton className="mb-2 h-6 w-full rounded-md" />
+    <Card className="relative col-span-1 gap-2 py-2">
+      <CardContent className="mb-2 px-2">
+        <Skeleton className="mb-4 h-46 rounded-lg" />
+        <Skeleton className="mb-3 h-6 w-full rounded-md" />
       </CardContent>
-      <CardFooter className="flex items-end justify-between px-4">
-        <Skeleton className="h-4 w-24 rounded-md" />
-        <Skeleton className="h-4 w-24 rounded-md" />
+      <CardFooter className="flex items-end justify-between px-2">
+        <Skeleton className="h-6 w-24 rounded-md" />
+        <Skeleton className="h-6 w-24 rounded-md" />
       </CardFooter>
     </Card>
   );
@@ -55,12 +59,12 @@ export function CardNFTSkeleton() {
 export default function CardNFT({
   currentAccount,
   nft,
-  availableMarketItemsRefetch,
 }: {
   currentAccount: string;
   nft: INFT;
   availableMarketItemsRefetch?: () => void;
 }) {
+  const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
   // Optimized: Only fetch tokenURI and metadata in parallel, fetch userProfile only if needed
   const { data: tokenURIData } = useReadContract({
@@ -99,6 +103,45 @@ export default function CardNFT({
 
   const { writeContractAsync } = useWriteContract();
 
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemCanceled',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.seller === currentAccount) {
+        toast.success('Market item canceled successfully!');
+        setLoading(false);
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemRelisted',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.seller === currentAccount) {
+        toast.success('Market item relisted successfully!');
+        setLoading(false);
+      }
+    },
+  });
+
+  useWatchContractEvent({
+    address: process.env.NEXT_PUBLIC_MARKET_ADDRESS as Address,
+    abi: MARKETPLACE_NFT,
+    eventName: 'MarketItemSold',
+    async onLogs(logs) {
+      if (logs.length === 0) return;
+      if (logs[0].args?.buyer === currentAccount) {
+        toast.success('NFT purchased successfully!');
+        setLoading(false);
+      }
+    },
+  });
+
   const handleCancelMarketItem = useCallback(async () => {
     if (cancelMarketItemLoading) return; // Prevent multiple clicks
     setCancelMarketItemLoading(true);
@@ -118,10 +161,10 @@ export default function CardNFT({
         ],
         account: currentAccount as Address,
       });
-      toast.success('NFT berhasil dibatalkan dari pasar!');
-      if (availableMarketItemsRefetch) {
-        await availableMarketItemsRefetch();
-      }
+      toast.info(
+        'Please wait, canceling market item... This may take a few seconds.',
+      );
+      setLoading(true);
       console.log('Transaction sent:', tx);
     } catch (error) {
       console.error('Error canceling market item:', error);
@@ -130,7 +173,6 @@ export default function CardNFT({
       setCancelMarketItemLoading(false);
     }
   }, [
-    availableMarketItemsRefetch,
     cancelMarketItemLoading,
     currentAccount,
     nft.marketItemId,
@@ -157,9 +199,8 @@ export default function CardNFT({
         account: currentAccount as Address,
         value: nft.price,
       });
-      if (availableMarketItemsRefetch) {
-        await availableMarketItemsRefetch();
-      }
+      toast.info('Please wait, purchasing NFT... This may take a few seconds.');
+      setLoading(true);
       toast.success('Pembelian NFT berhasil!');
       console.log('Transaction sent:', tx);
     } catch (error) {
@@ -169,7 +210,6 @@ export default function CardNFT({
       setCreateMarketSaleLoading(false);
     }
   }, [
-    availableMarketItemsRefetch,
     createMarketSaleLoading,
     currentAccount,
     nft.marketItemId,
@@ -191,7 +231,7 @@ export default function CardNFT({
     return null;
   }
 
-  if (tokenMetadata === null) {
+  if (tokenMetadata === null || loading) {
     return <CardNFTSkeleton />;
   }
 
