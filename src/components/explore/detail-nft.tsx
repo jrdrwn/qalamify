@@ -9,14 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { formatAddress, formatDate } from '@/lib/utils';
 import { useAppKitAccount } from '@reown/appkit/react';
-import {
-  Clock,
-  ExternalLink,
-  Flag,
-  Heart,
-  Loader2,
-  Share2,
-} from 'lucide-react';
+import { Clock, ExternalLink, Heart, Loader2, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -505,9 +498,9 @@ const NFTDetail = ({ id }: { id: bigint }) => {
                     <Button variant="outline" size="icon" onClick={handleShare}>
                       <Share2 className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="icon">
+                    {/* <Button variant="outline" size="icon">
                       <Flag className="h-4 w-4" />
-                    </Button>
+                    </Button> */}
                   </div>
                 </div>
                 <p className="line-clamp-4 leading-relaxed text-muted-foreground">

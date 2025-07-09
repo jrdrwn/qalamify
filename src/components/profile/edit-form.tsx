@@ -208,7 +208,10 @@ export default function EditProfileForm({
                     {imageFile || profile?.avatarURL ? (
                       <div className="mt-2 rounded-lg border-2 border-border p-1">
                         <ZoomableImage
-                          src={profile?.avatarURL || URL.createObjectURL(imageFile!)}
+                          src={
+                            profile?.avatarURL ||
+                            URL.createObjectURL(imageFile!)
+                          }
                           alt="NFT Preview"
                           className="h-48 w-full cursor-zoom-in rounded-lg object-cover object-center"
                           width={400}

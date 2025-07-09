@@ -222,15 +222,6 @@ export default function CardNFT({
     return <CardNFTSkeleton />;
   }
 
-  // Early return if search query doesn't match
-  const searchQuery = searchParams.get('q') || '';
-  if (
-    searchQuery &&
-    !tokenMetadata?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) {
-    return null;
-  }
-
   if (tokenMetadata === null || loading) {
     return <CardNFTSkeleton />;
   }

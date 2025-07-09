@@ -283,6 +283,77 @@ export const MARKETPLACE_NFT = [
   },
   {
     inputs: [],
+    name: 'fetchAllAvailableMarketItems',
+    outputs: [
+      {
+        components: [
+          {
+            internalType: 'uint256',
+            name: 'marketItemId',
+            type: 'uint256',
+          },
+          {
+            internalType: 'address',
+            name: 'nftContractAddress',
+            type: 'address',
+          },
+          {
+            internalType: 'uint256',
+            name: 'tokenId',
+            type: 'uint256',
+          },
+          {
+            internalType: 'address payable',
+            name: 'creator',
+            type: 'address',
+          },
+          {
+            internalType: 'address payable',
+            name: 'seller',
+            type: 'address',
+          },
+          {
+            internalType: 'address payable',
+            name: 'owner',
+            type: 'address',
+          },
+          {
+            internalType: 'uint256',
+            name: 'price',
+            type: 'uint256',
+          },
+          {
+            internalType: 'bool',
+            name: 'sold',
+            type: 'bool',
+          },
+          {
+            internalType: 'bool',
+            name: 'canceled',
+            type: 'bool',
+          },
+        ],
+        internalType: 'struct Marketplace.MarketItem[]',
+        name: '',
+        type: 'tuple[]',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'int256',
+        name: 'offset',
+        type: 'int256',
+      },
+      {
+        internalType: 'int256',
+        name: 'limit',
+        type: 'int256',
+      },
+    ],
     name: 'fetchAvailableMarketItems',
     outputs: [
       {
@@ -334,6 +405,131 @@ export const MARKETPLACE_NFT = [
           },
         ],
         internalType: 'struct Marketplace.MarketItem[]',
+        name: '',
+        type: 'tuple[]',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'int256',
+        name: 'offset',
+        type: 'int256',
+      },
+      {
+        internalType: 'int256',
+        name: 'limit',
+        type: 'int256',
+      },
+    ],
+    name: 'fetchAvailableMarketItemsWithMetadata',
+    outputs: [
+      {
+        components: [
+          {
+            components: [
+              {
+                internalType: 'uint256',
+                name: 'marketItemId',
+                type: 'uint256',
+              },
+              {
+                internalType: 'address',
+                name: 'nftContractAddress',
+                type: 'address',
+              },
+              {
+                internalType: 'uint256',
+                name: 'tokenId',
+                type: 'uint256',
+              },
+              {
+                internalType: 'address payable',
+                name: 'creator',
+                type: 'address',
+              },
+              {
+                internalType: 'address payable',
+                name: 'seller',
+                type: 'address',
+              },
+              {
+                internalType: 'address payable',
+                name: 'owner',
+                type: 'address',
+              },
+              {
+                internalType: 'uint256',
+                name: 'price',
+                type: 'uint256',
+              },
+              {
+                internalType: 'bool',
+                name: 'sold',
+                type: 'bool',
+              },
+              {
+                internalType: 'bool',
+                name: 'canceled',
+                type: 'bool',
+              },
+            ],
+            internalType: 'struct Marketplace.MarketItem',
+            name: 'item',
+            type: 'tuple',
+          },
+          {
+            components: [
+              {
+                internalType: 'string',
+                name: 'name',
+                type: 'string',
+              },
+              {
+                internalType: 'string',
+                name: 'description',
+                type: 'string',
+              },
+              {
+                internalType: 'uint256',
+                name: 'calligraphyStyle',
+                type: 'uint256',
+              },
+              {
+                internalType: 'uint256',
+                name: 'presentationStyle',
+                type: 'uint256',
+              },
+              {
+                internalType: 'uint256',
+                name: 'composition',
+                type: 'uint256',
+              },
+              {
+                internalType: 'uint256',
+                name: 'decoration',
+                type: 'uint256',
+              },
+              {
+                internalType: 'string',
+                name: 'dominantColor',
+                type: 'string',
+              },
+              {
+                internalType: 'uint256',
+                name: 'mintingAt',
+                type: 'uint256',
+              },
+            ],
+            internalType: 'struct KaligrafiNFT.TokenMetadata',
+            name: 'metadata',
+            type: 'tuple',
+          },
+        ],
+        internalType: 'struct Marketplace.MarketItemWithMetadata[]',
         name: '',
         type: 'tuple[]',
       },
