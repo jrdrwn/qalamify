@@ -40,7 +40,7 @@ const customNetwork = defineChain({
 });
 
 // 3. Set the networks
-const networks = [customNetwork, sepolia] as [
+const networks = [sepolia, customNetwork] as [
   AppKitNetwork,
   ...AppKitNetwork[],
 ];

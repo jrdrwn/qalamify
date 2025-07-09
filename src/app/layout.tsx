@@ -30,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <ReactScan />
+      {process.env.RS && <ReactScan />}
       <body
         className={`${soraSans.className} ${geistMono.className} antialiased`}
       >
