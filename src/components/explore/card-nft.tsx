@@ -15,7 +15,7 @@ import {
   useWriteContract,
 } from 'wagmi';
 
-import { AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardFooter } from '../ui/card';
 import { Skeleton } from '../ui/skeleton';
@@ -242,7 +242,7 @@ export default function CardNFT({
         />
         <div className="flex items-center gap-3">
           {userProfileData?.avatarURL ? (
-            <>
+            <Avatar>
               <AvatarImage
                 src={userProfileData?.avatarURL}
                 className="object-cover object-center"
@@ -250,7 +250,7 @@ export default function CardNFT({
               <AvatarFallback>
                 {userProfileData?.username[0] || 'Q'}
               </AvatarFallback>
-            </>
+            </Avatar>
           ) : (
             <CircleUserRound className="size-5 text-muted-foreground" />
           )}
