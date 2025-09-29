@@ -144,14 +144,14 @@ const Profile = ({
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary">
                     {userStatisticsData &&
-                      shortNumber(parseInt(formatEther(userStatisticsData[1])))}
+                      shortNumber(parseFloat(formatEther(userStatisticsData[1])))} ETH
                   </div>
                   <div className="text-sm text-foreground/50">Revenue</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary">
                     {userStatisticsData &&
-                      shortNumber(parseInt(formatEther(userStatisticsData[2])))}
+                      shortNumber(parseFloat(formatEther(userStatisticsData[2])))} ETH
                   </div>
                   <div className="text-sm text-foreground/50">
                     Royalty Earned
