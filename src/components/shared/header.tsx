@@ -22,15 +22,16 @@ import {
   useAppKitState,
 } from '@reown/appkit/react';
 import {
+  Book,
   Home,
   Loader2,
   Menu,
-  PencilRuler,
   Plus,
   Search,
   User,
   Wallet,
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useMemo } from 'react';
@@ -64,6 +65,7 @@ export default function Header() {
           </span>
         ),
         href: '/',
+        target: '_self',
       },
       {
         title: (
@@ -73,6 +75,7 @@ export default function Header() {
           </span>
         ),
         href: '/explore',
+        target: '_self',
       },
       {
         title: (
@@ -82,6 +85,17 @@ export default function Header() {
           </span>
         ),
         href: '/create',
+        target: '_self',
+      },
+      {
+        title: (
+          <span className="flex items-center justify-center gap-1.5">
+            <Book className="text-primary" />
+            User Guide
+          </span>
+        ),
+        href: '/panduan-qalamify.pdf',
+        target: '_blank',
       },
     ],
     [],
@@ -102,6 +116,7 @@ export default function Header() {
             </span>
           ),
           href: `/profile`,
+          target: '_self',
         },
       ];
     }
@@ -126,7 +141,12 @@ export default function Header() {
           prefetch={false}
         >
           <Button className="rounded-full">
-            <PencilRuler />
+            <Image
+              alt="Qalamify Logo"
+              src={'/logo.png'}
+              width={20}
+              height={20}
+            />
             <span className="">Qalamify</span>
           </Button>
         </Link>
@@ -148,6 +168,7 @@ export default function Header() {
                     href={menu.href}
                     className="flex items-center justify-center"
                     prefetch={false}
+                    target={menu.target}
                   >
                     {menu.title}
                   </Link>
